@@ -1,0 +1,45 @@
+# Builder image
+FROM python:3.8-slim-buster as Builder
+
+WORKDIR /usr/src/app
+
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE 1
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev
+
+RUN pip install --upgrade pip pipenv
+COPY Pipfile* ./
+# Install dependencies and generate requirements.txt
+RUN pipenv install \
+    && pipenv run pip freeze > requirements.txt \
+    && pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/app/wheels -r requirements.txt
+
+# Final image
+FROM python:3.8-slim-buster
+
+# Copy wait-for-it
+COPY wait-for-it.sh /wait-for-it.sh
+RUN chmod +x /wait-for-it.sh
+
+RUN mkdir -p /home/app
+
+RUN groupadd -r app && useradd --no-log-init -r -g app app
+
+ENV HOME=/home/app
+ENV APP_HOME=/home/app/web
+RUN mkdir $APP_HOME
+WORKDIR $APP_HOME
+
+RUN apt-get update && apt-get install -y libpq-dev
+COPY --from=builder /usr/src/app/wheels /wheels
+COPY --from=builder /usr/src/app/requirements.txt ./
+RUN pip install --no-cache-dir /wheels/*
+
+COPY . $APP_HOME
+
+RUN chown -R app:app $APP_HOME
+
+USER app
