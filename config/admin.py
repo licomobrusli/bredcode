@@ -9,8 +9,8 @@ class ServiceCategoryAdmin(admin.ModelAdmin):
 admin.site.register(ServiceCategory, ServiceCategoryAdmin)
 
 class ServicesAdmin(admin.ModelAdmin):
-    list_display = ['code', 'service_category', 'name', 'description', 'total_duration', 'price', 'image_path', 'date_created']
-    search_fields = ['code', 'name']
+    list_display = ['code', 'name', 'description', 'total_duration', 'price', 'image_path', 'service_category', 'date_created']
+    search_fields = ['code', 'service_category', 'name']
     list_filter = ['date_created', 'service_category']
 
 admin.site.register(Services, ServicesAdmin)
