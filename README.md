@@ -11,7 +11,7 @@ To set up the backend and database, you'll need to have the following installed:
 ### Steps
 1. Clone the repository: `git clone https://github.com/licomobrusli/bredcode.git`
 2. Navigate to the project directory: `cd bredcode`
-3. Run Docker Compose: `docker-compose up`
+3. Run Docker Compose: `docker-compose -f docker-compose.prod.yml up --build`
 
 ## Usage
 Once the Docker containers are up and running, the backend API will be available at `http://localhost:8000/` (replace with your actual port if different).
