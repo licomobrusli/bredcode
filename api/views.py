@@ -12,9 +12,10 @@ class ServiceCategoryList(APIView):
 
 class ServiceList(APIView):
     def get(self, request, format=None):
-        services = Services.objects.all()  # <-- Use Services here
-        service_category_id = self.request.query_params.get('service_category_id', None)
-        if service_category_id:
-            services = services.filter(service_category_id=service_category_id)
-        serializer = ServicesSerializer(services, many=True)  # <-- Use ServicesSerializer here
+        services = Services.objects.all()
+        category_code = self.request.query_params.get('categoryCode', None)
+        if category_code:
+            # Assuming that your ServiceCategory model has a 'code' field that is unique for each category
+            services = services.filter(service_category__code=category_code)
+        serializer = ServicesSerializer(services, many=True)
         return Response(serializer.data)
