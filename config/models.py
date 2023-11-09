@@ -15,7 +15,7 @@ class ServiceCategory(models.Model):
 
 class Services(models.Model):
     code = models.CharField(max_length=4, unique=True)
-    service_category = models.CharField(max_length=4, blank=True, unique=True)
+    service_category = models.ForeignKey(ServiceCategory, on_delete=models.SET_NULL, null=True, blank=True)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255, blank=True, null=True)
     total_duration = models.IntegerField()
