@@ -32,7 +32,7 @@ class Services(models.Model):
 class ModalSelect(models.Model):
     code = models.CharField(max_length=4, unique=True)
     name = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
+    description = models.CharField(max_length=255, blank=True, null=True)
     duration = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     category_code = models.ForeignKey(ServiceCategory, on_delete=models.SET_NULL, null=True, blank=True)
@@ -50,7 +50,7 @@ class ModalSelect(models.Model):
 class ModalCount(models.Model):
     code = models.CharField(max_length=4, unique=True)
     name = models.CharField(max_length=255)
-    description = models.TextField(max_length=255, blank=True, null=True)
+    description = models.CharField(max_length=255, blank=True, null=True)
     duration = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     max_quantity = models.IntegerField()
