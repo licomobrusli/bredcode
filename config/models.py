@@ -11,7 +11,9 @@ class ServiceCategory(models.Model):
         return self.name
 
     class Meta:
-        db_table = 'service_categories'
+        db_table = 'service_categories' # Ensures the table name is exact
+        ordering = ['id']  # Default ordering
+
 
 class Services(models.Model):
     code = models.CharField(max_length=4, unique=True)
@@ -27,7 +29,8 @@ class Services(models.Model):
         return self.name
 
     class Meta:
-        db_table = 'services'
+        db_table = 'services' # Ensures the table name is exact
+        ordering = ['id']  # Default ordering
 
 class ModalSelect(models.Model):
     code = models.CharField(max_length=4, unique=True)
@@ -45,6 +48,7 @@ class ModalSelect(models.Model):
 
     class Meta:
         db_table = 'modal_select'  # Ensures the table name is exactly 'modal_select'
+        ordering = ['id']  # Default ordering
 
 
 class ModalCount(models.Model):
@@ -64,3 +68,4 @@ class ModalCount(models.Model):
 
     class Meta:
         db_table = 'modal_count'  # Ensures the table name is exactly 'modal_count'
+        ordering = ['id']  # Default ordering
