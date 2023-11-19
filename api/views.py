@@ -1,9 +1,10 @@
 # views.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from config.models import ServiceCategory, Services  # <-- Import Services model here
-from .serializers import ServiceCategorySerializer, ServicesSerializer  # <-- Import ServicesSerializer here
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from config.models import ServiceCategory, Services, ModalCount
+from .serializers import  ServiceCategorySerializer, ServicesSerializer, ModalCountSerializer
 
 class ServiceCategoryList(APIView):
     def get(self, request, format=None):
@@ -32,4 +33,23 @@ class ServiceList(APIView):
             services = services.filter(code=service_code)
 
         serializer = ServicesSerializer(services, many=True)
+        return Response(serializer.data)
+    
+class ModalCountList(APIView):
+    def get(self, request, format=None):
+        modal_counts = ModalCount.objects.all()
+
+        # Get category_code and service_code from query parameters
+        category_code = request.query_params.get('categoryCode', None)
+        service_code = request.query_params.get('serviceCode', None)
+
+        # Filter by category code if provided
+        if category_code:
+            modal_counts = modal_counts.filter(category_code__code=category_code)
+
+        # Filter by service code if provided
+        if service_code:
+            modal_counts = modal_counts.filter(service_code__code=service_code)
+
+        serializer = ModalCountSerializer(modal_counts, many=True)
         return Response(serializer.data)
