@@ -62,6 +62,7 @@ class ModalCount(models.Model):
     service_code = models.ForeignKey(Services, on_delete=models.SET_NULL, null=True, blank=True)
     image_path = models.CharField(max_length=1000, blank=True, null=True)
     date_created = models.DateField(auto_now_add=True)
+    logic = models.CharField(max_length=3, default='NOT', null=False)
 
     def __str__(self):
         return self.name
