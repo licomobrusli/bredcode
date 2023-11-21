@@ -63,6 +63,7 @@ class ModalCount(models.Model):
     image_path = models.CharField(max_length=1000, blank=True, null=True)
     date_created = models.DateField(auto_now_add=True)
     logic = models.CharField(max_length=3, default='NOT', null=False)
+    sub = models.IntegerField(default=0, null=False)
 
     def __str__(self):
         return self.name

@@ -17,7 +17,7 @@ class ServicesAdmin(admin.ModelAdmin):
 admin.site.register(Services, ServicesAdmin)
 
 class ModalCountAdmin(admin.ModelAdmin):
-    list_display = ['code', 'name', 'description', 'duration', 'price', 'max_quantity', 'category_code', 'service_code', 'image_path', 'date_created', 'logic']
+    list_display = ['code', 'name', 'description', 'duration', 'price', 'max_quantity', 'category_code', 'service_code', 'image_path', 'date_created', 'logic', 'sub']
     search_fields = ['code', 'name', 'category_code__name', 'service_code__name']
     list_filter = ['date_created', 'category_code', 'service_code']
 
