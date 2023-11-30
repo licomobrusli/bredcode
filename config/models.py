@@ -1,4 +1,6 @@
 from django.db import models
+from django.utils import timezone
+import datetime
 
 class ServiceCategory(models.Model):
     code = models.CharField(max_length=4, unique=True)
@@ -69,5 +71,51 @@ class ModalCount(models.Model):
         return self.name
 
     class Meta:
-        db_table = 'modal_count'  # Ensures the table name is exactly 'modal_count'
+        db_table = 'modal_count'  # Ensures the table name is exactly 'ModalCount'
         ordering = ['id']  # Default ordering
+
+class Orders(models.Model):
+    item_count = models.IntegerField()
+    order_price = models.DecimalField(max_digits=10, decimal_places=2)
+    est_start = models.TimeField(default=timezone.now, blank=True, null=True)  # Set a default function to the current time
+    est_duration = models.IntegerField(blank=True, null=True)
+    start = models.TimeField(blank=True, null=True)
+    duration = models.IntegerField(blank=True, null=True)
+    time_created = models.TimeField(auto_now_add=True)
+    date_created = models.DateField(auto_now_add=True)
+
+    # def save(self, *args, **kwargs):
+    #    if not self.id:  # if new order
+    #        last_order = Orders.objects.filter(date_created=datetime.date.today()).last()
+    #        if last_order:
+    #            self.est_start = (datetime.datetime.combine(datetime.date(1,1,1), last_order.est_start) + datetime.timedelta(minutes=last_order.est_duration)).time()
+    #    super().save(*args, **kwargs)
+
+    class Meta:
+        db_table = 'orders'
+        ordering = ['id']
+
+class OrderItems(models.Model):
+    order = models.ForeignKey(Orders, on_delete=models.CASCADE)
+    modal_count = models.ForeignKey(ModalCount, on_delete=models.SET_NULL, null=True, blank=True)  # Corrected field name
+    item_name = models.CharField(max_length=255)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    item_count = models.IntegerField(blank=True, null=True)
+    item_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    est_start = models.TimeField(blank=True, null=True)  # The default will be managed by a trigger in the database, or you can manage it in the save method
+    est_duration = models.IntegerField(blank=True, null=True)
+    start = models.TimeField(blank=True, null=True)
+    duration = models.IntegerField(blank=True, null=True)
+    time_created = models.TimeField(auto_now_add=True)
+    date_created = models.DateField(auto_now_add=True)
+
+    # def save(self, *args, **kwargs):
+    #    if not self.id:  # if new order item
+    #        last_item = OrderItems.objects.filter(order=self.order).last()
+    #        if last_item:
+    #            self.est_start = (datetime.datetime.combine(datetime.date(1,1,1), last_item.est_start) + datetime.timedelta(minutes=last_item.est_duration)).time()
+    #    super().save(*args, **kwargs)
+
+    class Meta:
+        db_table = 'order_items'
+        ordering = ['id']
