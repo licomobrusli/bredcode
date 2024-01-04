@@ -1,6 +1,6 @@
 # admin.py
 from django.contrib import admin
-from .models import ServiceCategory, Services, ModalCount
+from .models import ServiceCategory, Services, ModalCount, ModalSelect
 
 class ServiceCategoryAdmin(admin.ModelAdmin):
     list_display = ['code', 'name', 'description', 'image_path', 'date_created']
@@ -22,3 +22,10 @@ class ModalCountAdmin(admin.ModelAdmin):
     list_filter = ['date_created', 'category_code', 'service_code']
 
 admin.site.register(ModalCount, ModalCountAdmin)
+
+class ModalSelectAdmin(admin.ModelAdmin):
+    list_display = ['code', 'name', 'description', 'duration', 'price', 'category_code', 'service_code', 'image_path', 'date_created']
+    search_fields = ['code', 'name', 'category_code__name', 'service_code__name']
+    list_filter = ['date_created', 'category_code', 'service_code']
+
+admin.site.register(ModalSelect, ModalSelectAdmin)

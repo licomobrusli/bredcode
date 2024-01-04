@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from config.models import Services, ServiceCategory, ModalCount
+from config.models import ModalSelect
 
 class ServiceCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,3 +16,8 @@ class ModalCountSerializer(serializers.ModelSerializer):
     class Meta:
         model = ModalCount
         fields = ['id', 'code', 'name', 'description', 'duration', 'price', 'max_quantity', 'category_code', 'service_code', 'image_path', 'date_created', 'logic', 'sub']
+
+class ModalSelectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ModalSelect
+        fields = ['id', 'code', 'name', 'description', 'duration', 'price', 'category_code', 'service_code', 'image_path', 'date_created']
