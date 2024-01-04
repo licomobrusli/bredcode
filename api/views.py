@@ -63,7 +63,7 @@ class ModalSelectList(APIView):
         # Get category_code and service_code from query parameters
         category_code = request.query_params.get('categoryCode', None)
         service_code = request.query_params.get('serviceCode', None)
-        code = request.query_params.get('code', None)  # New line to get the codeStart parameter
+        code = request.query_params.get('code', None)  # New line to get the code parameter
 
         # Filter by category code if provided
         if category_code:
