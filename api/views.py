@@ -63,7 +63,7 @@ class ModalSelectList(APIView):
         # Get category_code and service_code from query parameters
         category_code = request.query_params.get('categoryCode', None)
         service_code = request.query_params.get('serviceCode', None)
-        code_start = request.query_params.get('codeStart', None)  # New line to get the codeStart parameter
+        code = request.query_params.get('code', None)  # New line to get the codeStart parameter
 
         # Filter by category code if provided
         if category_code:
@@ -74,8 +74,8 @@ class ModalSelectList(APIView):
             modal_selects = modal_selects.filter(service_code__code=service_code)
 
         # New block: Filter by code field if provided
-        if code_start:
-            modal_selects = modal_selects.filter(code__startswith=code_start)
+        if code:
+            modal_selects = modal_selects.filter(code__startswith=code)
 
         serializer = ModalSelectSerializer(modal_selects, many=True)
         return Response(serializer.data)
