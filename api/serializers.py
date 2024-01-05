@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from config.models import Services, ServiceCategory, ModalCount
-from config.models import ModalSelect
+from config.models import Services, ServiceCategory, ModalCount, ModalSelect, Orders, OrderItems
 
 class ServiceCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,3 +20,15 @@ class ModalSelectSerializer(serializers.ModelSerializer):
     class Meta:
         model = ModalSelect
         fields = ['id', 'code', 'name', 'description', 'duration', 'price', 'category_code', 'service_code', 'image_path', 'date_created']
+
+class OrdersSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Orders
+        fields = ['id', 'item_count', 'order_price', 'est_start', 'est_duration', 'start', 'duration', 'time_created', 'date_created']
+        read_only_fields = ['id', 'time_created', 'date_created']
+
+class OrderItemsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderItems
+        fields = ['id', 'order', 'modal_count', 'item_name', 'unit_price', 'item_count', 'item_price', 'est_start', 'est_duration', 'start', 'duration', 'time_created', 'date_created']
+        read_only_fields = ['id', 'time_created', 'date_created']

@@ -1,12 +1,11 @@
 # views.py
+from rest_framework.generics import CreateAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from config.models import ServiceCategory, Services, ModalCount
-from .serializers import  ServiceCategorySerializer, ServicesSerializer, ModalCountSerializer
-from config.models import ModalSelect
-from .serializers import ModalSelectSerializer
+from config.models import ServiceCategory, Services, ModalCount, ModalSelect, Orders, OrderItems
+from .serializers import  ServiceCategorySerializer, ServicesSerializer, ModalCountSerializer, ModalSelectSerializer, OrdersSerializer, OrderItemsSerializer
 
 class ServiceCategoryList(APIView):
     def get(self, request, format=None):
@@ -80,3 +79,43 @@ class ModalSelectList(APIView):
         serializer = ModalSelectSerializer(modal_selects, many=True)
         return Response(serializer.data)
     
+class OrdersList(APIView):
+    def get(self, request, format=None):
+        orders = Orders.objects.all()
+
+        # Get id from query parameters
+        id = request.query_params.get('id', None)
+
+        # Filter by id if provided
+        if id:
+            orders = orders.filter(id__code=id)
+
+        serializer = OrdersSerializer(orders, many=False)
+        return Response(serializer.data)
+
+class OrderCreate(CreateAPIView):
+    queryset = Orders.objects.all()
+    serializer_class = OrdersSerializer
+
+class OrderItemsList(APIView):
+    def get(self, request, format=None):
+        order_items = OrderItems.objects.all()
+
+        # Get order from query parameters
+        id = request.query_params.get('id', None)
+        order = request.query_params.get('order', None)
+
+        # Filter by id if provided
+        if id:
+            order_items = order_items.filter(id__code=id)
+            
+        # Filter by order if provided
+        if order:
+            order_items = order_items.filter(order__id=order)
+
+        serializer = OrderItemsSerializer(order_items, many=False)
+        return Response(serializer.data)
+    
+class OrderItemCreate(CreateAPIView):
+    queryset = OrderItems.objects.all()
+    serializer_class = OrderItemsSerializer
