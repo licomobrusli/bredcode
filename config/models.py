@@ -77,7 +77,7 @@ class ModalCount(models.Model):
 class Orders(models.Model):
     item_count = models.IntegerField()
     order_price = models.DecimalField(max_digits=10, decimal_places=2)
-    est_start = models.TimeField(auto_now_add=True, blank=True, null=True)  # Set a default function to the current time
+    est_start = models.TimeField(auto_now_add=True, blank=True, null=True)
     est_duration = models.IntegerField(blank=True, null=True)
     start = models.TimeField(blank=True, null=True)
     duration = models.IntegerField(blank=True, null=True)
@@ -105,18 +105,26 @@ class Orders(models.Model):
 
 class OrderItems(models.Model):
     order = models.ForeignKey(Orders, on_delete=models.CASCADE)
-    modal_count = models.ForeignKey(ModalCount, on_delete=models.SET_NULL, null=True, blank=True)  # Corrected field name
+    modal_count = models.ForeignKey(ModalCount, on_delete=models.SET_NULL, null=True, blank=True)
     item_name = models.CharField(max_length=255)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     item_count = models.IntegerField(blank=True, null=True)
     item_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    est_start = models.TimeField(blank=True, null=True)  # The default will be managed by a trigger in the database, or you can manage it in the save method
+    est_start = models.TimeField(auto_now_add=True, blank=True, null=True)
     est_duration = models.IntegerField(blank=True, null=True)
     start = models.TimeField(blank=True, null=True)
     duration = models.IntegerField(blank=True, null=True)
     time_created = models.TimeField(auto_now_add=True)
     date_created = models.DateField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        if not self.id:  # If the object is being created
+            now = timezone.now()
+            self.est_start = now.time()  # Only save the time part
+            self.time_created = now.time()  # Only save the time part
+            self.date_created = now.date()  # Only save the date part
+        super(Orders, self).save(*args, **kwargs)
+    
     # def save(self, *args, **kwargs):
     #    if not self.id:  # if new order item
     #        last_item = OrderItems.objects.filter(order=self.order).last()
