@@ -123,7 +123,8 @@ class OrderItems(models.Model):
             self.est_start = now.time()  # Only save the time part
             self.time_created = now.time()  # Only save the time part
             self.date_created = now.date()  # Only save the date part
-        super(Orders, self).save(*args, **kwargs)
+        super(OrderItems, self).save(*args, **kwargs)
+
     
     # def save(self, *args, **kwargs):
     #    if not self.id:  # if new order item
