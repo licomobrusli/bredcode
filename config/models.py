@@ -77,13 +77,21 @@ class ModalCount(models.Model):
 class Orders(models.Model):
     item_count = models.IntegerField()
     order_price = models.DecimalField(max_digits=10, decimal_places=2)
-    est_start = models.TimeField(default=timezone.now, blank=True, null=True)  # Set a default function to the current time
+    est_start = models.TimeField(auto_now_add=True, blank=True, null=True)  # Set a default function to the current time
     est_duration = models.IntegerField(blank=True, null=True)
     start = models.TimeField(blank=True, null=True)
     duration = models.IntegerField(blank=True, null=True)
     time_created = models.TimeField(auto_now_add=True)
     date_created = models.DateField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        if not self.id:  # If the object is being created
+            now = timezone.now()
+            self.est_start = now.time()  # Only save the time part
+            self.time_created = now.time()  # Only save the time part
+            self.date_created = now.date()  # Only save the date part
+        super(Orders, self).save(*args, **kwargs)
+    
     # def save(self, *args, **kwargs):
     #    if not self.id:  # if new order
     #        last_order = Orders.objects.filter(date_created=datetime.date.today()).last()
