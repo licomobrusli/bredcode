@@ -123,7 +123,7 @@ class OrderItems(models.Model):
     duration = models.IntegerField(blank=True, null=True)
     time_created = models.TimeField(auto_now_add=True)
     date_created = models.DateField(auto_now_add=True)
-    order_number = models.CharField(max_length=20, unique=True, blank=True)
+    order_number = models.CharField(max_length=20, unique=False, blank=True)
 
     def save(self, *args, **kwargs):
         # If the object is being created, assign time and date fields
