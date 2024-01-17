@@ -87,18 +87,25 @@ class Orders(models.Model):
     order_number = models.CharField(max_length=20, unique=True, blank=True)
 
     def save(self, *args, **kwargs):
-        if not self.id:  # If the object is being created
-            now = timezone.now()
-            self.est_start = now.time()  # Only save the time part
-            self.time_created = now.time()  # Only save the time part
-            self.date_created = now.date()  # Only save the date part
+        creating = not self.id  # Check if the object is being created
+        now = timezone.now()
+
+        if creating:
+            # Assign est_start, time_created, and date_created before first save
+            self.est_start = now.time()
+            self.time_created = now.time()
+            self.date_created = now.date()
+
+        super(Orders, self).save(*args, **kwargs)
+
+        if creating:
+            # Generate and assign order_number after the object has been saved
             franchise_code = 'M1'
             date_str = now.strftime('%y%m%d%H')
             random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=3))
             self.order_number = f"{franchise_code}{date_str}{str(self.id).zfill(6)}{random_str}"
-            
-        super(Orders, self).save(*args, **kwargs)
-    
+            super(Orders, self).save(update_fields=['order_number'])
+
     class Meta:
         db_table = 'orders'
         ordering = ['id']
@@ -119,18 +126,19 @@ class OrderItems(models.Model):
     order_number = models.CharField(max_length=20, unique=True, blank=True)
 
     def save(self, *args, **kwargs):
-        if not self.id:  # If the object is being created
+        # If the object is being created, assign time and date fields
+        if not self.id:
             now = timezone.now()
-            self.est_start = now.time()  # Only save the time part
-            self.time_created = now.time()  # Only save the time part
-            self.date_created = now.date()  # Only save the date part
-            franchise_code = 'M1'
-            date_str = now.strftime('%y%m%d%H')
-            random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=3))
-            self.order_number = f"{franchise_code}{date_str}{str(self.id).zfill(6)}{random_str}"
-            
+            self.est_start = now.time()
+            self.time_created = now.time()
+            self.date_created = now.date()
+
+        # Before saving, check if 'order' is set and use its 'order_number'
+        if self.order and not self.order_number:
+            self.order_number = self.order.order_number
+
         super(OrderItems, self).save(*args, **kwargs)
-    
+
     class Meta:
         db_table = 'order_items'
         ordering = ['id']
