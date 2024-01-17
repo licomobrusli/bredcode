@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
-import datetime
+import random
+import string
 
 class ServiceCategory(models.Model):
     code = models.CharField(max_length=4, unique=True)
@@ -83,6 +84,7 @@ class Orders(models.Model):
     duration = models.IntegerField(blank=True, null=True)
     time_created = models.TimeField(auto_now_add=True)
     date_created = models.DateField(auto_now_add=True)
+    order_number = models.CharField(max_length=20, unique=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.id:  # If the object is being created
@@ -90,15 +92,13 @@ class Orders(models.Model):
             self.est_start = now.time()  # Only save the time part
             self.time_created = now.time()  # Only save the time part
             self.date_created = now.date()  # Only save the date part
+            franchise_code = 'M1'
+            date_str = now.strftime('%y%m%d%H')
+            random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=3))
+            self.order_number = f"{franchise_code}{date_str}{str(self.id).zfill(6)}{random_str}"
+            
         super(Orders, self).save(*args, **kwargs)
     
-    # def save(self, *args, **kwargs):
-    #    if not self.id:  # if new order
-    #        last_order = Orders.objects.filter(date_created=datetime.date.today()).last()
-    #        if last_order:
-    #            self.est_start = (datetime.datetime.combine(datetime.date(1,1,1), last_order.est_start) + datetime.timedelta(minutes=last_order.est_duration)).time()
-    #    super().save(*args, **kwargs)
-
     class Meta:
         db_table = 'orders'
         ordering = ['id']
@@ -116,6 +116,7 @@ class OrderItems(models.Model):
     duration = models.IntegerField(blank=True, null=True)
     time_created = models.TimeField(auto_now_add=True)
     date_created = models.DateField(auto_now_add=True)
+    order_number = models.CharField(max_length=20, unique=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.id:  # If the object is being created
@@ -123,16 +124,13 @@ class OrderItems(models.Model):
             self.est_start = now.time()  # Only save the time part
             self.time_created = now.time()  # Only save the time part
             self.date_created = now.date()  # Only save the date part
+            franchise_code = 'M1'
+            date_str = now.strftime('%y%m%d%H')
+            random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=3))
+            self.order_number = f"{franchise_code}{date_str}{str(self.id).zfill(6)}{random_str}"
+            
         super(OrderItems, self).save(*args, **kwargs)
-
     
-    # def save(self, *args, **kwargs):
-    #    if not self.id:  # if new order item
-    #        last_item = OrderItems.objects.filter(order=self.order).last()
-    #        if last_item:
-    #            self.est_start = (datetime.datetime.combine(datetime.date(1,1,1), last_item.est_start) + datetime.timedelta(minutes=last_item.est_duration)).time()
-    #    super().save(*args, **kwargs)
-
     class Meta:
         db_table = 'order_items'
         ordering = ['id']

@@ -24,11 +24,11 @@ class ModalSelectSerializer(serializers.ModelSerializer):
 class OrdersSerializer(serializers.ModelSerializer):
     class Meta:
         model = Orders
-        fields = ['id', 'item_count', 'order_price', 'est_start', 'est_duration', 'start', 'duration', 'time_created', 'date_created']
+        fields = ['id', 'item_count', 'order_price', 'est_start', 'est_duration', 'start', 'duration', 'time_created', 'date_created', 'order_number']
         read_only_fields = ['id', 'time_created', 'date_created']
 
 class OrderItemsSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItems
-        fields = ['id', 'order', 'modal_count', 'item_name', 'unit_price', 'item_count', 'item_price', 'est_start', 'est_duration', 'start', 'duration', 'time_created', 'date_created']
+        fields = ['id', 'order', 'modal_count', 'item_name', 'unit_price', 'item_count', 'item_price', 'est_start', 'est_duration', 'start', 'duration', 'time_created', 'date_created', 'order_number']
         read_only_fields = ['id', 'time_created', 'date_created']

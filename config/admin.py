@@ -31,14 +31,14 @@ class ModalSelectAdmin(admin.ModelAdmin):
 admin.site.register(ModalSelect, ModalSelectAdmin)
 
 class OrdersAdmin(admin.ModelAdmin):
-    list_display = ['item_count', 'order_price', 'est_start', 'est_duration', 'start', 'duration', 'time_created', 'date_created']
+    list_display = ['item_count', 'order_price', 'est_start', 'est_duration', 'start', 'duration', 'time_created', 'date_created', 'order_number']
     search_fields = ['id']
     list_filter = ['date_created']
 
 admin.site.register(Orders, OrdersAdmin)
 
 class OrderItemsAdmin(admin.ModelAdmin):
-    list_display = ['order', 'modal_count', 'item_name', 'unit_price', 'item_count', 'item_price', 'est_start', 'est_duration', 'start', 'duration', 'time_created', 'date_created']
+    list_display = ['order', 'modal_count', 'item_name', 'unit_price', 'item_count', 'item_price', 'est_start', 'est_duration', 'start', 'duration', 'time_created', 'date_created', 'order_number']
     search_fields = ['order']
     list_filter = ['order', 'date_created']
 
