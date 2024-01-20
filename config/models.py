@@ -142,3 +142,65 @@ class OrderItems(models.Model):
     class Meta:
         db_table = 'order_items'
         ordering = ['id']
+
+
+class Employee(models.Model):
+    code = models.CharField(max_length=25, unique=True)
+    name = models.CharField(max_length=100)
+    surname = models.CharField(max_length=100)
+    dni = models.CharField(max_length=10, unique=True)
+    naf = models.CharField(max_length=15, unique=True)
+    dob = models.DateField()
+    tel = models.CharField(max_length=15, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    street = models.CharField(max_length=255, blank=True, null=True)
+    town = models.CharField(max_length=100)
+    postcode = models.CharField(max_length=10, blank=True, null=True)
+    start_date = models.DateField()
+    end_date = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.name} {self.surname} ({self.code})"
+
+    class Meta:
+        db_table = 'employees'
+        ordering = ['id']
+
+
+class ResourceType(models.Model):
+    code = models.CharField(max_length=5, unique=True)
+    name = models.CharField(max_length=100)
+    measure = models.CharField(max_length=100)
+    unit_size = models.IntegerField()
+    date_created = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+    class Meta:
+        db_table = 'resource_types'
+        ordering = ['id']
+
+
+class ResourceModel(models.Model):
+    code = models.CharField(max_length=5, unique=True)
+    name = models.CharField(max_length=100)
+    type = models.ForeignKey(ResourceType, on_delete=models.PROTECT, to_field='code')
+    type_code = models.CharField(max_length=5)
+    cost_per_unit = models.DecimalField(max_digits=10, decimal_places=2)
+    no_of_units = models.IntegerField()
+    fungible = models.BooleanField(default=True)
+    date_created = models.DateField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        # Ensure the type_code is set to the code of the related ResourceType
+        if not self.type_code:
+            self.type_code = self.type.code
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.name} ({self.code}) - {'Fungible' if self.fungible else 'Non-Fungible'}"
+
+    class Meta:
+        db_table = 'resource_models'
+        ordering = ['id']
