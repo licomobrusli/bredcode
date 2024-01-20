@@ -204,3 +204,36 @@ class ResourceModel(models.Model):
     class Meta:
         db_table = 'resource_models'
         ordering = ['id']
+
+from django.db import models
+
+class Phase(models.Model):
+    code = models.CharField(max_length=5, unique=True)
+    name = models.CharField(max_length=100)
+    item_code = models.ForeignKey(ModalCount, on_delete=models.CASCADE)
+    sequence = models.IntegerField()
+    duration = models.IntegerField()
+    date_created = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'phases'
+        ordering = ['id']
+
+from django.db import models
+
+class PhaseResource(models.Model):
+    code = models.CharField(max_length=5, unique=True)
+    name = models.CharField(max_length=100)
+    phase_code = models.ForeignKey(Phase, on_delete=models.CASCADE)
+    resource_models_code = models.ForeignKey(ResourceModel, on_delete=models.CASCADE)
+    date_created = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'phase_resources'
+        ordering = ['id']
