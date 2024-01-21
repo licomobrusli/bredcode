@@ -20,7 +20,7 @@ class ServiceCategory(models.Model):
 
 class Services(models.Model):
     code = models.CharField(max_length=4, unique=True)
-    service_category = models.ForeignKey(ServiceCategory, on_delete=models.SET_NULL, null=True, blank=True)
+    service_category = models.ForeignKey(ServiceCategory, on_delete=models.PROTECT, null=True, blank=True)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255, blank=True, null=True)
     total_duration = models.IntegerField()
@@ -41,8 +41,8 @@ class ModalSelect(models.Model):
     description = models.CharField(max_length=255, blank=True, null=True)
     duration = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    category_code = models.ForeignKey(ServiceCategory, on_delete=models.SET_NULL, null=True, blank=True)
-    service_code = models.ForeignKey(Services, on_delete=models.SET_NULL, null=True, blank=True)
+    category_code = models.ForeignKey(ServiceCategory, on_delete=models.PROTECT, null=True, blank=True)
+    service_code = models.ForeignKey(Services, on_delete=models.PROTECT, null=True, blank=True)
     image_path = models.CharField(max_length=1000, blank=True, null=True)
     date_created = models.DateField(auto_now_add=True)
 
@@ -61,12 +61,13 @@ class ModalCount(models.Model):
     duration = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     max_quantity = models.IntegerField()
-    category_code = models.ForeignKey(ServiceCategory, on_delete=models.SET_NULL, null=True, blank=True)
-    service_code = models.ForeignKey(Services, on_delete=models.SET_NULL, null=True, blank=True)
+    category_code = models.ForeignKey(ServiceCategory, on_delete=models.PROTECT, null=True, blank=True)
+    service_code = models.ForeignKey(Services, on_delete=models.PROTECT, null=True, blank=True)
     image_path = models.CharField(max_length=1000, blank=True, null=True)
     date_created = models.DateField(auto_now_add=True)
     logic = models.CharField(max_length=3, default='NOT', null=False)
     sub = models.IntegerField(default=0, null=False)
+    sequence = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -111,8 +112,8 @@ class Orders(models.Model):
         ordering = ['id']
 
 class OrderItems(models.Model):
-    order = models.ForeignKey(Orders, on_delete=models.CASCADE)
-    modal_count = models.ForeignKey(ModalCount, on_delete=models.SET_NULL, null=True, blank=True)
+    order = models.ForeignKey(Orders, on_delete=models.PROTECT)
+    modal_count = models.ForeignKey(ModalCount, on_delete=models.PROTECT, null=True, blank=True)
     item_name = models.CharField(max_length=255)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     item_count = models.IntegerField(blank=True, null=True)
@@ -158,6 +159,7 @@ class Employee(models.Model):
     postcode = models.CharField(max_length=10, blank=True, null=True)
     start_date = models.DateField()
     end_date = models.DateField(blank=True, null=True)
+    role = models.CharField(max_length=5, blank=True, null=True)
 
     def __str__(self):
         return f"{self.name} {self.surname} ({self.code})"
@@ -210,7 +212,7 @@ from django.db import models
 class Phase(models.Model):
     code = models.CharField(max_length=5, unique=True)
     name = models.CharField(max_length=100)
-    item_code = models.ForeignKey(ModalCount, on_delete=models.CASCADE)
+    item_code = models.ForeignKey(ModalCount, on_delete=models.PROTECT)
     sequence = models.IntegerField()
     duration = models.IntegerField()
     date_created = models.DateField(auto_now_add=True)
@@ -227,8 +229,9 @@ from django.db import models
 class PhaseResource(models.Model):
     code = models.CharField(max_length=5, unique=True)
     name = models.CharField(max_length=100)
-    phase_code = models.ForeignKey(Phase, on_delete=models.CASCADE)
-    resource_models_code = models.ForeignKey(ResourceModel, on_delete=models.CASCADE)
+    phase_code = models.ForeignKey(Phase, on_delete=models.PROTECT)
+    resource_models_code = models.ForeignKey(ResourceModel, on_delete=models.PROTECT)
+    resource_types_code = models.ForeignKey(ResourceType, on_delete=models.PROTECT, null=True, blank=True)
     date_created = models.DateField(auto_now_add=True)
 
     def __str__(self):
@@ -237,3 +240,20 @@ class PhaseResource(models.Model):
     class Meta:
         db_table = 'phase_resources'
         ordering = ['id']
+
+
+class TimeResourcesQueue(models.Model):
+    resource_item_code = models.CharField(max_length=25)
+    resource_item_name = models.CharField(max_length=100)
+    segment_type = models.IntegerField()  # Assuming segment_type is an integer that refers to a type
+    segment = models.CharField(max_length=50)  # 'segment' field to describe the type like 'shift_container' or 'break'
+    segment_start = models.TimeField()
+    segment_end = models.TimeField()
+    date_created = models.DateField(auto_now_add=True)
+    resource_model_id = models.ForeignKey(ResourceModel, on_delete=models.PROTECT, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.resource_item_name} ({self.segment})"
+
+    class Meta:
+        db_table = 'time_resources_queue'  # This is to ensure the table name in the database matches the provided name
