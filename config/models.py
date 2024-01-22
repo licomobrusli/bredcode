@@ -250,10 +250,33 @@ class TimeResourcesQueue(models.Model):
     segment_start = models.TimeField()
     segment_end = models.TimeField()
     date_created = models.DateField(auto_now_add=True)
-    resource_model_id = models.ForeignKey(ResourceModel, on_delete=models.PROTECT, null=True, blank=True)
+    resource_model = models.ForeignKey(ResourceModel, on_delete=models.PROTECT, null=True, blank=True)
+    segment_params = models.ForeignKey('SegmentParam', on_delete=models.PROTECT, null=True, blank=True)
 
     def __str__(self):
         return f"{self.resource_item_name} ({self.segment})"
 
     class Meta:
         db_table = 'time_resources_queue'  # This is to ensure the table name in the database matches the provided name
+        ordering = ['id']  # Default ordering
+
+class SegmentParam(models.Model):
+    code = models.CharField(max_length=5, primary_key=True)
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    container = models.BooleanField(default=False)
+    contained = models.BooleanField(default=False)
+    available = models.BooleanField(default=False)
+    working = models.BooleanField(default=False)
+    active = models.BooleanField(default=False)
+    paid = models.BooleanField(default=False)
+    calc_pay = models.IntegerField(default=0)
+    calc_available = models.IntegerField(default=0)
+    date_created = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+    class Meta:
+        db_table = 'segment_params'
+        ordering = ['code']
