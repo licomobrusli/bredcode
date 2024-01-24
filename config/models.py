@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 import random
 import string
+from django.apps import apps
 
 class ServiceCategory(models.Model):
     code = models.CharField(max_length=4, unique=True)
@@ -280,3 +281,22 @@ class SegmentParam(models.Model):
     class Meta:
         db_table = 'segment_params'
         ordering = ['code']
+
+
+from django.db import models
+from .models import TimeResourcesQueue
+from django.utils import timezone
+
+class ResourceAvailability(models.Model):
+    resource_item = models.ForeignKey(TimeResourcesQueue, on_delete=models.PROTECT)
+    available_start = models.DateTimeField()
+    available_end = models.DateTimeField()
+    duration = models.DurationField()
+    date_created = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.resource_item} available from {self.available_start} to {self.available_end}"
+
+    class Meta:
+        db_table = 'resource_availablity'
+        ordering = ['date_created', 'available_start']
