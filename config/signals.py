@@ -2,11 +2,16 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.db import transaction
 from .models import TimeResourcesQueue, ResourceAvailability
+import logging
+
+# Create a logger instance
+logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender=TimeResourcesQueue)
 @receiver(post_delete, sender=TimeResourcesQueue)
 @transaction.atomic
 def update_resource_availability(sender, instance, **kwargs):
+    logger.info(f"Signal received for {sender.__name__} with instance {instance.pk}")
     containers = TimeResourcesQueue.objects.select_for_update().filter(
         resource_model=instance.resource_model,
         segment_params__container=True

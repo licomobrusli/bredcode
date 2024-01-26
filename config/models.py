@@ -80,11 +80,11 @@ class ModalCount(models.Model):
 class Orders(models.Model):
     item_count = models.IntegerField()
     order_price = models.DecimalField(max_digits=10, decimal_places=2)
-    est_start = models.TimeField(auto_now_add=True, blank=True, null=True)
+    est_start = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     est_duration = models.IntegerField(blank=True, null=True)
-    start = models.TimeField(blank=True, null=True)
+    start = models.DateTimeField(blank=True, null=True)
     duration = models.IntegerField(blank=True, null=True)
-    time_created = models.TimeField(auto_now_add=True)
+    time_created = models.DateTimeField(auto_now_add=True)
     date_created = models.DateField(auto_now_add=True)
     order_number = models.CharField(max_length=20, unique=True, blank=True)
 
@@ -119,11 +119,11 @@ class OrderItems(models.Model):
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     item_count = models.IntegerField(blank=True, null=True)
     item_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    est_start = models.TimeField(auto_now_add=True, blank=True, null=True)
+    est_start = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     est_duration = models.IntegerField(blank=True, null=True)
-    start = models.TimeField(blank=True, null=True)
+    start = models.DateTimeField(blank=True, null=True)
     duration = models.IntegerField(blank=True, null=True)
-    time_created = models.TimeField(auto_now_add=True)
+    time_created = models.DateTimeField(auto_now_add=True)
     date_created = models.DateField(auto_now_add=True)
     order_number = models.CharField(max_length=20, unique=False, blank=True)
 
@@ -248,8 +248,8 @@ class TimeResourcesQueue(models.Model):
     resource_item_name = models.CharField(max_length=100)
     segment_type = models.IntegerField()  # Assuming segment_type is an integer that refers to a type
     segment = models.CharField(max_length=50)  # 'segment' field to describe the type like 'shift_container' or 'break'
-    segment_start = models.TimeField()
-    segment_end = models.TimeField()
+    segment_start = models.DateTimeField()
+    segment_end = models.DateTimeField()
     date_created = models.DateField(auto_now_add=True)
     resource_model = models.ForeignKey(ResourceModel, on_delete=models.PROTECT, null=True, blank=True)
     segment_params = models.ForeignKey('SegmentParam', on_delete=models.PROTECT, null=True, blank=True)
