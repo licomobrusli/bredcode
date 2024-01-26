@@ -283,12 +283,8 @@ class SegmentParam(models.Model):
         ordering = ['code']
 
 
-from django.db import models
-from .models import TimeResourcesQueue
-from django.utils import timezone
-
 class ResourceAvailability(models.Model):
-    resource_item = models.ForeignKey(TimeResourcesQueue, on_delete=models.PROTECT)
+    resource_item = models.ForeignKey(TimeResourcesQueue, on_delete=models.CASCADE)
     available_start = models.DateTimeField()
     available_end = models.DateTimeField()
     duration = models.DurationField()
