@@ -3,6 +3,8 @@ from django.utils import timezone
 import random
 import string
 from django.apps import apps
+from django.core.validators import MinValueValidator, MaxValueValidator
+from datetime import datetime, timedelta
 
 class ServiceCategory(models.Model):
     code = models.CharField(max_length=4, unique=True)
@@ -147,7 +149,7 @@ class OrderItems(models.Model):
 
 
 class Employee(models.Model):
-    code = models.CharField(max_length=25, unique=True)
+    code = models.CharField(max_length=25, unique=True, primary_key=True)
     name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
     dni = models.CharField(max_length=10, unique=True)
@@ -167,8 +169,7 @@ class Employee(models.Model):
 
     class Meta:
         db_table = 'employees'
-        ordering = ['id']
-
+        ordering = ['code']
 
 class ResourceType(models.Model):
     code = models.CharField(max_length=5, unique=True)
@@ -186,7 +187,7 @@ class ResourceType(models.Model):
 
 
 class ResourceModel(models.Model):
-    code = models.CharField(max_length=5, unique=True)
+    code = models.CharField(max_length=5, unique=True, primary_key=True)
     name = models.CharField(max_length=100)
     type = models.ForeignKey(ResourceType, on_delete=models.PROTECT, to_field='code')
     type_code = models.CharField(max_length=5)
@@ -206,7 +207,7 @@ class ResourceModel(models.Model):
 
     class Meta:
         db_table = 'resource_models'
-        ordering = ['id']
+        ordering = ['code']
 
 from django.db import models
 
@@ -231,7 +232,7 @@ class PhaseResource(models.Model):
     code = models.CharField(max_length=5, unique=True)
     name = models.CharField(max_length=100)
     phase_code = models.ForeignKey(Phase, on_delete=models.PROTECT)
-    resource_models_code = models.ForeignKey(ResourceModel, on_delete=models.PROTECT)
+    resource_models_code = models.ForeignKey(ResourceModel, on_delete=models.SET_NULL, null=True, blank=True)
     resource_types_code = models.ForeignKey(ResourceType, on_delete=models.PROTECT, null=True, blank=True)
     date_created = models.DateField(auto_now_add=True)
 
@@ -245,13 +246,12 @@ class PhaseResource(models.Model):
 
 class TimeResourcesQueue(models.Model):
     resource_item_code = models.CharField(max_length=25)
-    resource_item_name = models.CharField(max_length=100)
     segment_type = models.IntegerField()  # Assuming segment_type is an integer that refers to a type
     segment = models.CharField(max_length=50)  # 'segment' field to describe the type like 'shift_container' or 'break'
     segment_start = models.DateTimeField()
     segment_end = models.DateTimeField()
     date_created = models.DateField(auto_now_add=True)
-    resource_model = models.ForeignKey(ResourceModel, on_delete=models.PROTECT, null=True, blank=True)
+    resource_model = models.ForeignKey(ResourceModel, on_delete=models.SET_NULL, null=True, blank=True)
     segment_params = models.ForeignKey('SegmentParam', on_delete=models.PROTECT, null=True, blank=True)
 
     def __str__(self):
@@ -296,3 +296,71 @@ class ResourceAvailability(models.Model):
     class Meta:
         db_table = 'resource_availablity'
         ordering = ['date_created', 'available_start']
+
+
+from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
+from datetime import datetime, timedelta
+
+class ScheduleTemplateIndex(models.Model):
+    code = models.CharField(max_length=5, unique=True, primary_key=True)
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+    date_created = models.DateField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'schedule_template_index'
+        ordering = ['code']
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+class ScheduleTemplate(models.Model):
+    index_code = models.ForeignKey(ScheduleTemplateIndex, on_delete=models.CASCADE)
+    code = models.CharField(max_length=5, unique=True, primary_key=True)
+    wk = models.CharField(max_length=1)
+    wkday = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(7)])
+    shift_start = models.TimeField()
+    shift_end = models.TimeField()
+    sched_container = models.DurationField()
+    lunch_duration = models.DurationField(null=True, blank=True)
+    gross_sched = models.DurationField()
+    breaks_duration = models.DurationField(null=True, blank=True)
+    net_sched = models.DurationField()
+    date_created = models.DateField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        # Calculate the duration between shift_start and shift_end
+        self.sched_container = datetime.combine(datetime.min, self.shift_end) - \
+                               datetime.combine(datetime.min, self.shift_start)
+
+        # Calculate gross_sched by subtracting lunch_duration from sched_container
+        self.gross_sched = self.sched_container - (self.lunch_duration or timedelta())
+
+        # Calculate net_sched by subtracting breaks_duration from gross_sched
+        self.net_sched = self.gross_sched - (self.breaks_duration or timedelta())
+
+        super(ScheduleTemplate, self).save(*args, **kwargs)
+
+    class Meta:
+        db_table = 'schedule_templates'
+        ordering = ['code']
+
+    def __str__(self):
+        return f"{self.code} - {self.wk} - {self.wkday}"
+
+
+class EmployeeScheduleIndex(models.Model):
+    employee = models.ForeignKey('Employee', on_delete=models.CASCADE)
+    schedule_index = models.ForeignKey('ScheduleTemplateIndex', on_delete=models.CASCADE)
+    resource_model = models.ForeignKey('ResourceModel', on_delete=models.SET_NULL, null=True, blank=True)
+    first_rotation = models.CharField(max_length=1)
+    start_date = models.DateField()
+    end_date = models.DateField(blank=True, null=True)
+    date_created = models.DateField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'employee_schedule_index'  # Replace with your actual table name
+
+    def __str__(self):
+        return f"{self.id} - {self.employee_id} - {self.schedule_index_id}"
