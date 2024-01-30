@@ -190,7 +190,6 @@ class ResourceModel(models.Model):
     code = models.CharField(max_length=5, unique=True, primary_key=True)
     name = models.CharField(max_length=100)
     type = models.ForeignKey(ResourceType, on_delete=models.PROTECT, to_field='code')
-    type_code = models.CharField(max_length=5)
     cost_per_unit = models.DecimalField(max_digits=10, decimal_places=2)
     no_of_units = models.IntegerField()
     fungible = models.BooleanField(default=True)
@@ -246,20 +245,25 @@ class PhaseResource(models.Model):
 
 class TimeResourcesQueue(models.Model):
     resource_item_code = models.CharField(max_length=25)
-    segment_type = models.IntegerField()  # Assuming segment_type is an integer that refers to a type
-    segment = models.CharField(max_length=50)  # 'segment' field to describe the type like 'shift_container' or 'break'
+    segment = models.CharField(max_length=50)  # This field will be automatically populated
     segment_start = models.DateTimeField()
     segment_end = models.DateTimeField()
     date_created = models.DateField(auto_now_add=True)
     resource_model = models.ForeignKey(ResourceModel, on_delete=models.SET_NULL, null=True, blank=True)
     segment_params = models.ForeignKey('SegmentParam', on_delete=models.PROTECT, null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        # Before saving, update the 'segment' field based on the related SegmentParam's name
+        if self.segment_params:
+            self.segment = self.segment_params.name
+        super().save(*args, **kwargs)  # Call the "real" save() method
+
     def __str__(self):
-        return f"{self.resource_item_name} ({self.segment})"
+        return f"{self.resource_item_code} ({self.segment})"
 
     class Meta:
-        db_table = 'time_resources_queue'  # This is to ensure the table name in the database matches the provided name
-        ordering = ['id']  # Default ordering
+        db_table = 'time_resources_queue'
+        ordering = ['id']
 
 class SegmentParam(models.Model):
     code = models.CharField(max_length=5, primary_key=True)
@@ -298,10 +302,6 @@ class ResourceAvailability(models.Model):
         ordering = ['date_created', 'available_start']
 
 
-from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator
-from datetime import datetime, timedelta
-
 class ScheduleTemplateIndex(models.Model):
     code = models.CharField(max_length=5, unique=True, primary_key=True)
     name = models.CharField(max_length=100)
@@ -314,6 +314,7 @@ class ScheduleTemplateIndex(models.Model):
 
     def __str__(self):
         return f"{self.code} - {self.name}"
+
 
 class ScheduleTemplate(models.Model):
     index_code = models.ForeignKey(ScheduleTemplateIndex, on_delete=models.CASCADE)
