@@ -267,6 +267,7 @@ class TimeResourcesQueue(models.Model):
 
 
 class TimeResourcesQueueHistory(models.Model):
+    original_id = models.IntegerField()
     resource_item_code = models.CharField(max_length=25)
     segment = models.CharField(max_length=50)
     segment_start = models.DateTimeField()

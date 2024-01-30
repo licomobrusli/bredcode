@@ -2,8 +2,32 @@ from django.utils import timezone
 from django.db.models import F, Q, Func
 from django.db.models.functions import Now, ExtractWeekDay
 from django.db import transaction
-from config.models import TimeResourcesQueue, EmployeeScheduleIndex, ResourceModel, SegmentParam, ScheduleTemplate
+from config.models import TimeResourcesQueue, TimeResourcesQueueHistory, EmployeeScheduleIndex, ResourceModel, SegmentParam, ScheduleTemplate
 import datetime
+
+
+def archive_all_time_resource_queue_items():
+    with transaction.atomic():
+        # Retrieve all items
+        items = TimeResourcesQueue.objects.all()
+
+        for item in items:
+            # Create a new historical record for each item
+            TimeResourcesQueueHistory.objects.create(
+                original_id=item.id,
+                resource_item_code=item.resource_item_code,
+                segment=item.segment,
+                segment_start=item.segment_start,
+                segment_end=item.segment_end,
+                date_created=item.date_created,
+                resource_model=item.resource_model,
+                segment_params=item.segment_params,
+            )
+            # Delete the item from the active table
+            item.delete()
+        
+        print(f"Archived {items.count()} items from TimeResourcesQueue.")
+
 
 def start_of_day_process():
     # Fetch current date
