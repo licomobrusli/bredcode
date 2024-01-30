@@ -265,6 +265,25 @@ class TimeResourcesQueue(models.Model):
         db_table = 'time_resources_queue'
         ordering = ['id']
 
+
+class TimeResourcesQueueHistory(models.Model):
+    resource_item_code = models.CharField(max_length=25)
+    segment = models.CharField(max_length=50)
+    segment_start = models.DateTimeField()
+    segment_end = models.DateTimeField()
+    date_created = models.DateField()
+    resource_model = models.ForeignKey(ResourceModel, on_delete=models.SET_NULL, null=True, blank=True)
+    segment_params = models.ForeignKey('SegmentParam', on_delete=models.PROTECT, null=True, blank=True)
+    archived_date = models.DateTimeField(auto_now_add=True)  # Date when the record was archived
+
+    def __str__(self):
+        return f"{self.resource_item_code} ({self.segment}) - Archived"
+
+    class Meta:
+        db_table = 'time_resources_queue_history'
+        ordering = ['archived_date']
+
+
 class SegmentParam(models.Model):
     code = models.CharField(max_length=5, primary_key=True)
     name = models.CharField(max_length=100)
