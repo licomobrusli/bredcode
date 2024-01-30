@@ -326,6 +326,7 @@ class ScheduleTemplateIndex(models.Model):
     code = models.CharField(max_length=5, unique=True, primary_key=True)
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
+    rotations = models.IntegerField()
     date_created = models.DateField(auto_now_add=True)
 
     class Meta:
