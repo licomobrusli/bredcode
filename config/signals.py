@@ -12,6 +12,10 @@ logger = logging.getLogger(__name__)
 @transaction.atomic
 def update_resource_availability(sender, instance, **kwargs):
     logger.info(f"Signal received for {sender.__name__} with instance {instance.pk}")
+    
+    # Delete existing ResourceAvailability records for the resource_item_code
+    ResourceAvailability.objects.filter(resource_item=instance.resource_item_code).delete()
+
     containers = TimeResourcesQueue.objects.select_for_update().filter(
         resource_item_code=instance.resource_item_code,  # Use the specific resource item code
         segment_params__container=True
@@ -51,7 +55,7 @@ def update_resource_availability(sender, instance, **kwargs):
         for start, end in available_periods:
             duration = end - start
             ResourceAvailability.objects.update_or_create(
-                resource_item=container,
+                resource_item=container.resource_item_code,
                 available_start=start,
                 available_end=end,
                 defaults={'duration': duration}

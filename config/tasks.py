@@ -1,8 +1,8 @@
 from django.utils import timezone
-from django.db.models import F, Q, Func
+from django.db.models import Q
 from django.db.models.functions import Now, ExtractWeekDay
 from django.db import transaction
-from config.models import TimeResourcesQueue, TimeResourcesQueueHistory, EmployeeScheduleIndex, ResourceModel, SegmentParam, ScheduleTemplate
+from config.models import TimeResourcesQueue, TimeResourcesQueueHistory, EmployeeScheduleIndex, SegmentParam, ScheduleTemplate
 import datetime
 
 
@@ -39,39 +39,32 @@ def start_of_day_process():
         start_date__lte=current_date,
     ).select_related('schedule_index')
 
-    # Prepare the data for bulk_create
-    time_resource_queue_objects = []
-
-    for es in employee_schedules:
-        # Calculate the offset for the employee's schedule
-        total_rotations = es.schedule_index.rotations
-        rotation_start_index = alpha_to_numeric(es.first_rotation)
-        current_schedule_index = (week_of_year - 1) % total_rotations
-        emp_schedule_index = (rotation_start_index + current_schedule_index) % total_rotations
-        emp_current_schedule_code = numeric_to_alpha(emp_schedule_index)
-
-        # Fetch the corresponding schedule template
-        schedule_template = ScheduleTemplate.objects.filter(
-            index_code=es.schedule_index,
-            wk=emp_current_schedule_code,
-            wkday=ExtractWeekDay(Now())
-        ).first()
-
-        if schedule_template:
-            # Create TimeResourcesQueue object
-            time_resource_queue_object = TimeResourcesQueue(
-                resource_item_code=es.employee.code,
-                segment_start=timezone.make_aware(datetime.datetime.combine(current_date, schedule_template.shift_start)),
-                segment_end=timezone.make_aware(datetime.datetime.combine(current_date, schedule_template.shift_end)),
-                date_created=timezone.now(),
-                resource_model=es.resource_model,
-                segment_params=SegmentParam.objects.get(code='CNTN'),
-            )
-            time_resource_queue_objects.append(time_resource_queue_object)
-
-    # Use Django's bulk_create to insert all records
     with transaction.atomic():
-        TimeResourcesQueue.objects.bulk_create(time_resource_queue_objects)
+        for es in employee_schedules:
+            # Calculate the offset for the employee's schedule
+            total_rotations = es.schedule_index.rotations
+            rotation_start_index = alpha_to_numeric(es.first_rotation)
+            current_schedule_index = (week_of_year - 1) % total_rotations
+            emp_schedule_index = (rotation_start_index + current_schedule_index) % total_rotations
+            emp_current_schedule_code = numeric_to_alpha(emp_schedule_index)
+
+            # Fetch the corresponding schedule template
+            schedule_template = ScheduleTemplate.objects.filter(
+                index_code=es.schedule_index,
+                wk=emp_current_schedule_code,
+                wkday=ExtractWeekDay(Now())
+            ).first()
+
+            if schedule_template:
+                # Create and save TimeResourcesQueue object
+                TimeResourcesQueue.objects.create(
+                    resource_item_code=es.employee.code,
+                    segment_start=timezone.make_aware(datetime.datetime.combine(current_date, schedule_template.shift_start)),
+                    segment_end=timezone.make_aware(datetime.datetime.combine(current_date, schedule_template.shift_end)),
+                    date_created=timezone.now(),
+                    resource_model=es.resource_model,
+                    segment_params=SegmentParam.objects.get(code='CNTN'),
+                )
 
 def alpha_to_numeric(alpha):
     return ord(alpha.upper()) - ord('A')
