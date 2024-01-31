@@ -195,12 +195,6 @@ class ResourceModel(models.Model):
     fungible = models.BooleanField(default=True)
     date_created = models.DateField(auto_now_add=True)
 
-    def save(self, *args, **kwargs):
-        # Ensure the type_code is set to the code of the related ResourceType
-        if not self.type_code:
-            self.type_code = self.type.code
-        super().save(*args, **kwargs)
-
     def __str__(self):
         return f"{self.name} ({self.code}) - {'Fungible' if self.fungible else 'Non-Fungible'}"
 

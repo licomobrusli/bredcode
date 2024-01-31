@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def update_resource_availability(sender, instance, **kwargs):
     logger.info(f"Signal received for {sender.__name__} with instance {instance.pk}")
     containers = TimeResourcesQueue.objects.select_for_update().filter(
-        resource_model=instance.resource_model,
+        resource_item_code=instance.resource_item_code,  # Use the specific resource item code
         segment_params__container=True
     )
 
@@ -21,7 +21,7 @@ def update_resource_availability(sender, instance, **kwargs):
         available_periods = [(container.segment_start, container.segment_end)]
 
         overlapping_segments = TimeResourcesQueue.objects.select_for_update().filter(
-            resource_model=container.resource_model,
+            resource_item_code=container.resource_item_code,  # Use the specific resource item code
             segment_start__lt=container.segment_end,
             segment_end__gt=container.segment_start,
             segment_params__calc_available=-1
