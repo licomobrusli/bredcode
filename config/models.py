@@ -4,7 +4,7 @@ import random
 import string
 from django.apps import apps
 from django.core.validators import MinValueValidator, MaxValueValidator
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 class ServiceCategory(models.Model):
     code = models.CharField(max_length=4, unique=True)
@@ -149,7 +149,7 @@ class OrderItems(models.Model):
 
 
 class Employee(models.Model):
-    code = models.CharField(max_length=25, unique=True, primary_key=True)
+    resource_item = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE, related_name='employees')
     name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
     dni = models.CharField(max_length=10, unique=True)
@@ -160,36 +160,46 @@ class Employee(models.Model):
     street = models.CharField(max_length=255, blank=True, null=True)
     town = models.CharField(max_length=100)
     postcode = models.CharField(max_length=10, blank=True, null=True)
-    start_date = models.DateField()
-    end_date = models.DateField(blank=True, null=True)
-    role = models.CharField(max_length=5, blank=True, null=True)
+    resource_model = models.CharField(max_length=5, blank=True, null=True)
 
     def __str__(self):
-        return f"{self.name} {self.surname} ({self.code})"
+        return f"{self.name} {self.surname} ({self.resource_item})"
+
+    @property
+    def start_date(self):
+        return self.resource_item.start_date if self.resource_item else None
+
+    @property
+    def end_date(self):
+        return self.resource_item.end_date if self.resource_item else None
 
     class Meta:
         db_table = 'employees'
-        ordering = ['code']
-
+        ordering = ['id']
 
 class Equipment(models.Model):
-    code = models.CharField(max_length=25, unique=True, primary_key=True)
+    resource_item = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE, related_name='equipment', verbose_name="Time Resource Item")
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
-    purchase_date = models.DateField()
-    end_date = models.DateField(blank=True, null=True)  # Optional, in case the equipment is no longer in use
     resource_model = models.ForeignKey('ResourceModel', on_delete=models.SET_NULL, null=True, blank=True)
     
     # Additional fields can be added here based on your specific requirements
     # Examples: maintenance_schedule, last_maintenance_date, etc.
 
     def __str__(self):
-        return f"{self.name} ({self.code})"
+        return f"{self.name} ({self.resource_item})"
+
+    @property
+    def start_date(self):
+        return self.resource_item.start_date if self.resource_item else None
+
+    @property
+    def end_date(self):
+        return self.resource_item.end_date if self.resource_item else None
 
     class Meta:
         db_table = 'equipment'
-        ordering = ['code']
-
+        ordering = ['id']
 
 class ResourceType(models.Model):
     code = models.CharField(max_length=5, unique=True)
@@ -386,8 +396,8 @@ class ScheduleTemplate(models.Model):
         return f"{self.code} - {self.wk} - {self.wkday}"
 
 
-class EmployeeScheduleIndex(models.Model):
-    employee = models.ForeignKey('Employee', on_delete=models.CASCADE)
+class TimeResourceScheduleIndex(models.Model):
+    resource_item = models.ForeignKey('Employee', on_delete=models.CASCADE)
     schedule_index = models.ForeignKey('ScheduleTemplateIndex', on_delete=models.CASCADE)
     resource_model = models.ForeignKey('ResourceModel', on_delete=models.SET_NULL, null=True, blank=True)
     first_rotation = models.CharField(max_length=1)
@@ -396,7 +406,25 @@ class EmployeeScheduleIndex(models.Model):
     date_created = models.DateField(auto_now_add=True)
 
     class Meta:
-        db_table = 'employee_schedule_index'  # Replace with your actual table name
+        db_table = 'time_resource_schedule_index'  # Replace with your actual table name
 
     def __str__(self):
         return f"{self.id} - {self.employee_id} - {self.schedule_index_id}"
+    
+
+class TimeResourceItems(models.Model):
+    resource_item_code = models.CharField(max_length=25, unique=True, primary_key=True)
+    name = models.CharField(max_length=100)
+    description = models.CharField(max_length=255, blank=True, null=True)
+    start_date = models.DateField(default=date.today)
+    end_date = models.DateField(blank=True, null=True)
+    resource_model = models.ForeignKey('ResourceModel', on_delete=models.SET_NULL, null=True, blank=True)
+    date_created = models.DateField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'time_resource_items'
+        ordering = ['resource_item_code']
+        unique_together = [['resource_item_code', 'start_date', 'end_date']]  # Unique constraint
+
+    def __str__(self):
+        return f"{self.name} ({self.resource_item_code})"
