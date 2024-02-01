@@ -171,6 +171,26 @@ class Employee(models.Model):
         db_table = 'employees'
         ordering = ['code']
 
+
+class Equipment(models.Model):
+    code = models.CharField(max_length=25, unique=True, primary_key=True)
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+    purchase_date = models.DateField()
+    end_date = models.DateField(blank=True, null=True)  # Optional, in case the equipment is no longer in use
+    resource_model = models.ForeignKey('ResourceModel', on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Additional fields can be added here based on your specific requirements
+    # Examples: maintenance_schedule, last_maintenance_date, etc.
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+    class Meta:
+        db_table = 'equipment'
+        ordering = ['code']
+
+
 class ResourceType(models.Model):
     code = models.CharField(max_length=5, unique=True)
     name = models.CharField(max_length=100)
