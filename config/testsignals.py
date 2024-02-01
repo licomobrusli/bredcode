@@ -1,6 +1,9 @@
 # tests.py
 from django.test import TestCase
-from .models import TimeResourcesQueue, ResourceModel, SegmentParam, ResourceType, ResourceAvailability
+from .models import (
+    TimeResourcesQueue, ResourceModel, SegmentParam, ResourceType, 
+    ResourceAvailability, TimeResourceItems
+)
 from django.utils import timezone
 from datetime import timedelta
 
@@ -43,12 +46,18 @@ class TimeResourcesQueueSignalTest(TestCase):
         container_start = today.replace(hour=10)
         container_end = today.replace(hour=22)
 
-        # Define a common resource item code for the related segments
-        self.common_resource_item_code = 'RIC123'
+         # Create TimeResourceItems instance
+        self.time_resource_item = TimeResourceItems.objects.create(
+            resource_item_code='RIC123',
+            name='Test Resource Item',
+            description='This is a test resource item',
+            start_date=today.date(),
+            resource_model=resource_model,
+        )
 
-         # Create container TimeResourcesQueue instance using container_segment_param
+        # Create container TimeResourcesQueue instance using container_segment_param
         self.container_trq = TimeResourcesQueue.objects.create(
-            resource_item_code=self.common_resource_item_code,
+            resource_item_code=self.time_resource_item,
             segment='Container',
             segment_start=container_start,
             segment_end=container_end,
@@ -62,14 +71,15 @@ class TimeResourcesQueueSignalTest(TestCase):
         self.assertEqual(remaining_trqs.count(), 1)
         self.assertEqual(remaining_trqs.first(), self.container_trq)
 
-        availability_segments = ResourceAvailability.objects.filter(resource_item=self.common_resource_item_code).order_by('available_start')
+        # Use the TimeResourceItems instance for filtering ResourceAvailability
+        availability_segments = ResourceAvailability.objects.filter(resource_item=self.time_resource_item).order_by('available_start')
         self.assertEqual(availability_segments.count(), 1)
 
         # Create lunch TimeResourcesQueue instance using non_container_segment_param
         lunch_start = timezone.now().replace(hour=15)
         lunch_end = timezone.now().replace(hour=16)
         lunch_trq = TimeResourcesQueue.objects.create(
-            resource_item_code=self.common_resource_item_code,
+            resource_item_code=self.time_resource_item,  # Use the TimeResourceItems instance
             segment='Lunch',
             segment_start=lunch_start,
             segment_end=lunch_end,
@@ -81,7 +91,8 @@ class TimeResourcesQueueSignalTest(TestCase):
         remaining_trqs = TimeResourcesQueue.objects.all()
         self.assertEqual(remaining_trqs.count(), 2)
 
-        availability_segments = ResourceAvailability.objects.filter(resource_item=self.common_resource_item_code).order_by('available_start')
+        # Again, use the TimeResourceItems instance for filtering ResourceAvailability
+        availability_segments = ResourceAvailability.objects.filter(resource_item=self.time_resource_item).order_by('available_start')
         self.assertEqual(availability_segments.count(), 2)
 
         # Delete the lunch segment
@@ -91,7 +102,8 @@ class TimeResourcesQueueSignalTest(TestCase):
         remaining_trqs = TimeResourcesQueue.objects.all()
         self.assertEqual(remaining_trqs.count(), 1)
 
-        availability_segments = ResourceAvailability.objects.filter(resource_item=self.common_resource_item_code).order_by('available_start')
+        # Again, use the TimeResourceItems instance for filtering ResourceAvailability
+        availability_segments = ResourceAvailability.objects.filter(resource_item=self.time_resource_item).order_by('available_start')
         self.assertEqual(availability_segments.count(), 1)
 
         # Verify the time ranges of the availability segments
