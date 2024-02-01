@@ -178,7 +178,7 @@ class Employee(models.Model):
         ordering = ['id']
 
 class Equipment(models.Model):
-    resource_item = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE, related_name='equipment', verbose_name="Time Resource Item")
+    resource_item = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE, related_name='equipment')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     resource_model = models.ForeignKey('ResourceModel', on_delete=models.SET_NULL, null=True, blank=True)
@@ -268,7 +268,7 @@ class PhaseResource(models.Model):
 
 
 class TimeResourcesQueue(models.Model):
-    resource_item_code = models.CharField(max_length=25)
+    resource_item_code = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE)
     segment = models.CharField(max_length=50)  # This field will be automatically populated
     segment_start = models.DateTimeField()
     segment_end = models.DateTimeField()
@@ -292,7 +292,7 @@ class TimeResourcesQueue(models.Model):
 
 class TimeResourcesQueueHistory(models.Model):
     original_id = models.IntegerField()
-    resource_item_code = models.CharField(max_length=25)
+    resource_item_code = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE)
     segment = models.CharField(max_length=50)
     segment_start = models.DateTimeField()
     segment_end = models.DateTimeField()
@@ -332,7 +332,7 @@ class SegmentParam(models.Model):
 
 
 class ResourceAvailability(models.Model):
-    resource_item = models.CharField(max_length=25)
+    resource_item = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE)
     available_start = models.DateTimeField()
     available_end = models.DateTimeField()
     duration = models.DurationField()
@@ -397,7 +397,7 @@ class ScheduleTemplate(models.Model):
 
 
 class TimeResourceScheduleIndex(models.Model):
-    resource_item = models.ForeignKey('Employee', on_delete=models.CASCADE)
+    resource_item = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE)
     schedule_index = models.ForeignKey('ScheduleTemplateIndex', on_delete=models.CASCADE)
     resource_model = models.ForeignKey('ResourceModel', on_delete=models.SET_NULL, null=True, blank=True)
     first_rotation = models.CharField(max_length=1)
@@ -409,7 +409,7 @@ class TimeResourceScheduleIndex(models.Model):
         db_table = 'time_resource_schedule_index'  # Replace with your actual table name
 
     def __str__(self):
-        return f"{self.id} - {self.employee_id} - {self.schedule_index_id}"
+        return f"{self.id} - {self.resource_item} - {self.schedule_index}"
     
 
 class TimeResourceItems(models.Model):
