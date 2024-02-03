@@ -333,6 +333,7 @@ class SegmentParam(models.Model):
 
 class ResourceAvailability(models.Model):
     resource_item = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE)
+    resource_model = models.ForeignKey('ResourceModel', on_delete=models.SET_NULL, null=True, blank=True)
     available_start = models.DateTimeField()
     available_end = models.DateTimeField()
     duration = models.DurationField()

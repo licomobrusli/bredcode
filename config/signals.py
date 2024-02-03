@@ -56,6 +56,7 @@ def update_resource_availability(sender, instance, **kwargs):
             duration = end - start
             ResourceAvailability.objects.update_or_create(
                 resource_item=container.resource_item_code,
+                resource_model=container.resource_model,
                 available_start=start,
                 available_end=end,
                 defaults={'duration': duration}
