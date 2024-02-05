@@ -38,4 +38,4 @@ def create_order_and_items(request):
         order.save()
 
         # Return a success response
-        return Response({'status': 'Order and items submitted successfully', 'order_number': order.order_number})
+        return Response({'status': 'OK', 'order_number': order.order_number})
