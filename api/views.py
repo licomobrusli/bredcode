@@ -127,19 +127,23 @@ class OrderItemCreate(CreateAPIView):
 def create_order_and_items(request):
     with transaction.atomic():
         order_data = request.data.get('order')
+
+        # Create an order instance in memory with the received order_number
         order = Orders(
             item_count=order_data['item_count'],
-            order_price=order_data['order_price']
+            order_price=order_data['order_price'],
+            order_number=order_data.get('order_number')  # Use the received order number
         )
         order.save()
 
         for item_data in request.data.get('items', []):
             OrderItems.objects.create(
-                order=order,
+                order=order,  # associate with the in-memory order instance
                 item_name=item_data['item_name'],
                 unit_price=item_data['unit_price'],
                 item_count=item_data['item_count'],
                 item_price=item_data['item_price'],
             )
+
         # Ensure you return a Response object
         return Response({'status': 'Order and items submitted successfully', 'order_number': order.order_number})

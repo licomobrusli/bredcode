@@ -47,9 +47,10 @@ LOGGING = {
         },
     },
     'loggers': {
-        'config': {  # Using 'config' as this seems to be the name of your app
+        '': {  # root logger
             'handlers': ['console'],
-            'level': 'INFO',
+            'level': 'DEBUG',
+            'propagate': True,
         },
     },
 }

@@ -1,36 +1,27 @@
 # submit_order.py
-import random, string
 from django.db import transaction
-from django.utils import timezone
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Orders, OrderItems
+import logging
+
+logger = logging.getLogger(__name__)
 
 @api_view(['POST'])
 def create_order_and_items(request):
     with transaction.atomic():
-        # Create an order instance in memory
+        # Extract the order data from the request
         order_data = request.data.get('order')
-        order_counter = order_data.get('order_counter')
 
-        # Generate the order number using the order_counter
-        now = timezone.now()
-        franchise_code = 'M1'
-        date_str = now.strftime('%y%m%d%H')
-        random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=3))
-        order_number = f"{franchise_code}{date_str}{str(order_counter).zfill(6)}{random_str}"
+        # Use the pre-generated order number from the request
+        order_number = order_data.get('order_number')
+        logger.debug("Received order number: %s", order_number)
 
-        print("Franchise code:", franchise_code)
-        print("Date string:", date_str)
-        print("Order counter:", order_counter)
-        print("Random string:", random_str)
-        print("Generated order number:", order_number)
-        
-        # Create an order instance in memory with the generated order_number
+        # Create an order instance in memory with the received order_number
         order = Orders(
             item_count=order_data['item_count'],
             order_price=order_data['order_price'],
-            order_number=order_number
+            order_number=order_number  # Use the received order number
         )
 
         # Process order items
@@ -46,7 +37,5 @@ def create_order_and_items(request):
         # Save the order (which also saves associated order items)
         order.save()
 
-        print("Order number after saving:", order.order_number)
-        
         # Return a success response
         return Response({'status': 'Order and items submitted successfully', 'order_number': order.order_number})
