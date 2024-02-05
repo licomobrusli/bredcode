@@ -88,7 +88,7 @@ class Orders(models.Model):
     duration = models.IntegerField(blank=True, null=True)
     time_created = models.DateTimeField(auto_now_add=True)
     date_created = models.DateField(auto_now_add=True)
-    order_number = models.CharField(max_length=20, unique=True, blank=True)
+    order_number = models.CharField(max_length=20, unique=False, blank=True)
 
     def save(self, *args, **kwargs):
         creating = not self.id  # Check if the object is being created
@@ -102,17 +102,10 @@ class Orders(models.Model):
 
         super(Orders, self).save(*args, **kwargs)
 
-        if creating:
-            # Generate and assign order_number after the object has been saved
-            franchise_code = 'M1'
-            date_str = now.strftime('%y%m%d%H')
-            random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=3))
-            self.order_number = f"{franchise_code}{date_str}{str(self.id).zfill(6)}{random_str}"
-            super(Orders, self).save(update_fields=['order_number'])
-
     class Meta:
         db_table = 'orders'
         ordering = ['id']
+
 
 class OrderItems(models.Model):
     order = models.ForeignKey(Orders, on_delete=models.PROTECT)

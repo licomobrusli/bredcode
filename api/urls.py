@@ -1,6 +1,16 @@
 # urls.py
 from django.urls import path
-from .views import ServiceList, ServiceCategoryList, ModalCountList, ModalSelectList, OrdersList, OrderItemsList, OrderCreate, OrderItemCreate
+from .views import (
+    ServiceList,
+    ServiceCategoryList,
+    ModalCountList,
+    ModalSelectList,
+    OrdersList,
+    OrderItemsList,
+    OrderCreate,
+    OrderItemCreate,
+    create_order_and_items  # Import the view function
+)
 
 urlpatterns = [
     path('service_categories/', ServiceCategoryList.as_view(), name='service_category_list'),
@@ -11,4 +21,5 @@ urlpatterns = [
     path('order_items/', OrderItemsList.as_view(), name='order_items_list'),
     path('create_order/', OrderCreate.as_view(), name='create_order'),
     path('create_order_item/', OrderItemCreate.as_view(), name='create_order_item'),
+    path('submit_order/', create_order_and_items, name='submit_order'),
 ]

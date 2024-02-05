@@ -1,4 +1,6 @@
 # views.py
+from django.db import transaction
+from rest_framework.decorators import api_view
 from rest_framework.generics import CreateAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -119,3 +121,25 @@ class OrderItemsList(APIView):
 class OrderItemCreate(CreateAPIView):
     queryset = OrderItems.objects.all()
     serializer_class = OrderItemsSerializer
+
+
+@api_view(['POST'])
+def create_order_and_items(request):
+    with transaction.atomic():
+        order_data = request.data.get('order')
+        order = Orders(
+            item_count=order_data['item_count'],
+            order_price=order_data['order_price']
+        )
+        order.save()
+
+        for item_data in request.data.get('items', []):
+            OrderItems.objects.create(
+                order=order,
+                item_name=item_data['item_name'],
+                unit_price=item_data['unit_price'],
+                item_count=item_data['item_count'],
+                item_price=item_data['item_price'],
+            )
+        # Ensure you return a Response object
+        return Response({'status': 'Order and items submitted successfully', 'order_number': order.order_number})
