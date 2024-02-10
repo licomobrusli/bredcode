@@ -109,7 +109,7 @@ class Orders(models.Model):
 
 class OrderItems(models.Model):
     order = models.ForeignKey(Orders, on_delete=models.PROTECT)
-    modal_count = models.ForeignKey(ModalCount, on_delete=models.PROTECT, null=True, blank=True)
+    modal_count = models.ForeignKey(ModalCount, on_delete=models.CASCADE)
     item_name = models.CharField(max_length=255)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     item_count = models.IntegerField(blank=True, null=True)
@@ -153,7 +153,7 @@ class Employee(models.Model):
     street = models.CharField(max_length=255, blank=True, null=True)
     town = models.CharField(max_length=100)
     postcode = models.CharField(max_length=10, blank=True, null=True)
-    resource_model = models.CharField(max_length=5, blank=True, null=True)
+    resource_model = models.CharField(max_length=5)
 
     def __str__(self):
         return f"{self.name} {self.surname} ({self.resource_item})"
@@ -174,7 +174,7 @@ class Equipment(models.Model):
     resource_item = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE, related_name='equipment')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
-    resource_model = models.ForeignKey('ResourceModel', on_delete=models.SET_NULL, null=True, blank=True)
+    resource_model = models.ForeignKey('ResourceModel', on_delete=models.CASCADE)
     
     # Additional fields can be added here based on your specific requirements
     # Examples: maintenance_schedule, last_maintenance_date, etc.
@@ -248,8 +248,8 @@ class PhaseResource(models.Model):
     code = models.CharField(max_length=5, unique=True)
     name = models.CharField(max_length=100)
     phase_code = models.ForeignKey(Phase, on_delete=models.PROTECT)
-    resource_models_code = models.ForeignKey(ResourceModel, on_delete=models.SET_NULL, null=True, blank=True)
-    resource_types_code = models.ForeignKey(ResourceType, on_delete=models.PROTECT, null=True, blank=True)
+    resource_models_code = models.ForeignKey(ResourceModel, on_delete=models.CASCADE)
+    resource_types_code = models.ForeignKey(ResourceType, on_delete=models.CASCADE)
     date_created = models.DateField(auto_now_add=True)
 
     def __str__(self):
@@ -266,7 +266,7 @@ class TimeResourcesQueue(models.Model):
     segment_start = models.DateTimeField()
     segment_end = models.DateTimeField()
     date_created = models.DateField(auto_now_add=True)
-    resource_model = models.ForeignKey(ResourceModel, on_delete=models.SET_NULL, null=True, blank=True)
+    resource_model = models.ForeignKey(ResourceModel, on_delete=models.CASCADE)
     segment_params = models.ForeignKey('SegmentParam', on_delete=models.PROTECT, null=True, blank=True)
 
     def save(self, *args, **kwargs):
@@ -290,7 +290,7 @@ class TimeResourcesQueueHistory(models.Model):
     segment_start = models.DateTimeField()
     segment_end = models.DateTimeField()
     date_created = models.DateField()
-    resource_model = models.ForeignKey(ResourceModel, on_delete=models.SET_NULL, null=True, blank=True)
+    resource_model = models.ForeignKey(ResourceModel, on_delete=models.CASCADE)
     segment_params = models.ForeignKey('SegmentParam', on_delete=models.PROTECT, null=True, blank=True)
     archived_date = models.DateTimeField(auto_now_add=True)  # Date when the record was archived
 
@@ -326,7 +326,7 @@ class SegmentParam(models.Model):
 
 class ResourceAvailability(models.Model):
     resource_item = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE)
-    resource_model = models.ForeignKey('ResourceModel', on_delete=models.SET_NULL, null=True, blank=True)
+    resource_model = models.ForeignKey('ResourceModel', on_delete=models.CASCADE)
     available_start = models.DateTimeField()
     available_end = models.DateTimeField()
     duration = models.DurationField()
@@ -393,7 +393,7 @@ class ScheduleTemplate(models.Model):
 class TimeResourceScheduleIndex(models.Model):
     resource_item = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE)
     schedule_index = models.ForeignKey('ScheduleTemplateIndex', on_delete=models.CASCADE)
-    resource_model = models.ForeignKey('ResourceModel', on_delete=models.SET_NULL, null=True, blank=True)
+    resource_model = models.ForeignKey('ResourceModel', on_delete=models.CASCADE)
     first_rotation = models.CharField(max_length=1)
     start_date = models.DateField()
     end_date = models.DateField(blank=True, null=True)
@@ -412,7 +412,7 @@ class TimeResourceItems(models.Model):
     description = models.CharField(max_length=255, blank=True, null=True)
     start_date = models.DateField(default=date.today)
     end_date = models.DateField(blank=True, null=True)
-    resource_model = models.ForeignKey('ResourceModel', on_delete=models.SET_NULL, null=True, blank=True)
+    resource_model = models.ForeignKey('ResourceModel', on_delete=models.CASCADE)
     date_created = models.DateField(auto_now_add=True)
 
     class Meta:

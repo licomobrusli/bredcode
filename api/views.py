@@ -1,5 +1,6 @@
 # views.py
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.generics import CreateAPIView
 from rest_framework.views import APIView
@@ -137,8 +138,10 @@ def create_order_and_items(request):
         order.save()
 
         for item_data in request.data.get('items', []):
+            modal_count_instance = get_object_or_404(ModalCount, id=item_data['modal_count'])
             OrderItems.objects.create(
-                order=order,  # associate with the in-memory order instance
+                order=order,
+                modal_count=modal_count_instance,  # Use the fetched ModalCount instance
                 item_name=item_data['item_name'],
                 unit_price=item_data['unit_price'],
                 item_count=item_data['item_count'],
@@ -146,4 +149,4 @@ def create_order_and_items(request):
             )
 
         # Ensure you return a Response object
-        return Response({'status': 'Order and items submitted successfully', 'order_number': order.order_number})
+        return Response({'status': 'OK', 'order_number': order.order_number})
