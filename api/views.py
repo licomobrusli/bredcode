@@ -138,7 +138,7 @@ def create_order_and_items(request):
         order.save()
 
         for item_data in request.data.get('items', []):
-            modal_count_instance = get_object_or_404(ModalCount, id=item_data['modal_count'])
+            modal_count_instance = get_object_or_404(ModalCount, code=item_data['modal_count'])
             OrderItems.objects.create(
                 order=order,
                 modal_count=modal_count_instance,  # Use the fetched ModalCount instance

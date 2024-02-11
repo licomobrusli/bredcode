@@ -14,7 +14,7 @@ class ServicesSerializer(serializers.ModelSerializer):
 class ModalCountSerializer(serializers.ModelSerializer):
     class Meta:
         model = ModalCount
-        fields = ['id', 'code', 'name', 'description', 'duration', 'price', 'max_quantity', 'category_code', 'service_code', 'image_path', 'date_created', 'logic', 'sub']
+        fields = ['code', 'name', 'description', 'duration', 'price', 'max_quantity', 'category_code', 'service_code', 'image_path', 'date_created', 'logic', 'sub']
 
 class ModalSelectSerializer(serializers.ModelSerializer):
     class Meta:

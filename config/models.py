@@ -57,8 +57,43 @@ class ModalSelect(models.Model):
         ordering = ['id']  # Default ordering
 
 
+class SegmentParam(models.Model):
+    code = models.CharField(max_length=5, primary_key=True)
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    container = models.BooleanField(default=False)
+    contained = models.BooleanField(default=False)
+    available = models.BooleanField(default=False)
+    working = models.BooleanField(default=False)
+    active = models.BooleanField(default=False)
+    paid = models.BooleanField(default=False)
+    calc_pay = models.IntegerField(default=0)
+    calc_available = models.IntegerField(default=0)
+    date_created = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+    class Meta:
+        db_table = 'segment_params'
+        ordering = ['code']
+
+
+class Segment(models.Model):
+    code = models.CharField(max_length=10, primary_key=True)
+    type = models.CharField(max_length=100)
+    segment_param = models.ForeignKey(SegmentParam, on_delete=models.CASCADE, related_name='segments')
+
+    class Meta:
+        db_table = 'segments'
+        ordering = ['code']
+
+    def __str__(self):
+        return f"{self.code} - {self.type}"
+
+
 class ModalCount(models.Model):
-    code = models.CharField(max_length=4, unique=True)
+    code = models.OneToOneField(Segment, on_delete=models.CASCADE, primary_key=True, related_name='modal_count')
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255, blank=True, null=True)
     duration = models.IntegerField()
@@ -77,7 +112,7 @@ class ModalCount(models.Model):
 
     class Meta:
         db_table = 'modal_count'  # Ensures the table name is exactly 'ModalCount'
-        ordering = ['id']  # Default ordering
+        ordering = ['code']  # Default ordering
 
 class Orders(models.Model):
     item_count = models.IntegerField()
@@ -225,7 +260,6 @@ class ResourceModel(models.Model):
         db_table = 'resource_models'
         ordering = ['code']
 
-from django.db import models
 
 class Phase(models.Model):
     code = models.CharField(max_length=5, unique=True)
@@ -242,7 +276,6 @@ class Phase(models.Model):
         db_table = 'phases'
         ordering = ['id']
 
-from django.db import models
 
 class PhaseResource(models.Model):
     code = models.CharField(max_length=5, unique=True)
@@ -300,28 +333,6 @@ class TimeResourcesQueueHistory(models.Model):
     class Meta:
         db_table = 'time_resources_queue_history'
         ordering = ['archived_date']
-
-
-class SegmentParam(models.Model):
-    code = models.CharField(max_length=5, primary_key=True)
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    container = models.BooleanField(default=False)
-    contained = models.BooleanField(default=False)
-    available = models.BooleanField(default=False)
-    working = models.BooleanField(default=False)
-    active = models.BooleanField(default=False)
-    paid = models.BooleanField(default=False)
-    calc_pay = models.IntegerField(default=0)
-    calc_available = models.IntegerField(default=0)
-    date_created = models.DateField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.name} ({self.code})"
-
-    class Meta:
-        db_table = 'segment_params'
-        ordering = ['code']
 
 
 class ResourceAvailability(models.Model):
