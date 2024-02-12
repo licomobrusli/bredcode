@@ -66,6 +66,7 @@ def start_of_day_process():
                     segment_end=timezone.make_aware(datetime.datetime.combine(current_date, schedule_template.shift_end)),
                     date_created=timezone.now(),
                     resource_model=trs.resource_model,
+                    segment_params=segment_instance.segment_param,
                 )
 
 def alpha_to_numeric(alpha):
