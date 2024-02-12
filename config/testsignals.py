@@ -1,8 +1,8 @@
 # tests.py
 from django.test import TestCase
 from .models import (
-    TimeResourcesQueue, ResourceModel, SegmentParam, ResourceType, 
-    ResourceAvailability, TimeResourceItems
+    TimeResourcesQueue, ResourceModel, ModalCount, Segment, SegmentParam, ResourceType, 
+    ResourceAvailability, TimeResourceItems, ServiceCategory, Services
 )
 from django.utils import timezone
 from datetime import timedelta
@@ -29,13 +29,13 @@ class TimeResourcesQueueSignalTest(TestCase):
 
         # Create SegmentParam instances and assign them to instance variables
         self.container_segment_param = SegmentParam.objects.create(
-            code='CSP12',
+            code='CTNT',
             name='Container Segment',
             container=True,
             calc_available=1
         )
         self.non_container_segment_param = SegmentParam.objects.create(
-            code='NCSP1',
+            code='NCSP',
             name='Non-Container Segment',
             container=False,
             calc_available=-1
@@ -48,21 +48,54 @@ class TimeResourcesQueueSignalTest(TestCase):
 
          # Create TimeResourceItems instance
         self.time_resource_item = TimeResourceItems.objects.create(
-            resource_item_code='RIC123',
+            resource_item_code='RIC12',
             name='Test Resource Item',
             description='This is a test resource item',
             start_date=today.date(),
             resource_model=resource_model,
         )
 
+        segment_instance = Segment.objects.create(
+            code='SHFT', 
+            type='SC', 
+            segment_param=self.container_segment_param
+        )
+
         # Create container TimeResourcesQueue instance using container_segment_param
         self.container_trq = TimeResourcesQueue.objects.create(
             resource_item_code=self.time_resource_item,
-            segment='Container',
+            segment=segment_instance,
             segment_start=container_start,
             segment_end=container_end,
             resource_model=resource_model,
             segment_params=self.container_segment_param
+        )
+
+        # Create ServiceCategory and Services instances
+        self.service_category = ServiceCategory.objects.create(
+            code='SC01',
+            name='Service Category',
+            description='Test Service Category'
+        )
+        
+        self.service = Services.objects.create(
+            code='SV01',
+            name='Service',
+            service_category=self.service_category,
+            description='Test Service',
+            total_duration=30,
+            price=50.00
+        )
+        
+        self.modal_count_shampoo = ModalCount.objects.create(
+            code=segment_instance,  # Use the Segment instance here
+            name='Shampoo', 
+            description='Shampoo Description', 
+            duration=5, 
+            price=100.00, 
+            max_quantity=10, 
+            category_code=self.service_category, 
+            service_code=self.service
         )
 
     def test_post_delete_signal(self):
@@ -78,9 +111,15 @@ class TimeResourcesQueueSignalTest(TestCase):
         # Create lunch TimeResourcesQueue instance using non_container_segment_param
         lunch_start = timezone.now().replace(hour=15)
         lunch_end = timezone.now().replace(hour=16)
+        lunch_segment = Segment.objects.create(
+            code='LNCH',  # A unique code for the lunch segment
+            type='Break',  # Assuming 'Break' is a valid type for this example
+            segment_param=self.non_container_segment_param
+        )
+
         lunch_trq = TimeResourcesQueue.objects.create(
-            resource_item_code=self.time_resource_item,  # Use the TimeResourceItems instance
-            segment='Lunch',
+            resource_item_code=self.time_resource_item,
+            segment=lunch_segment,  # Use the newly created Segment instance
             segment_start=lunch_start,
             segment_end=lunch_end,
             resource_model=self.container_trq.resource_model,

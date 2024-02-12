@@ -295,18 +295,12 @@ class PhaseResource(models.Model):
 
 class TimeResourcesQueue(models.Model):
     resource_item_code = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE)
-    segment = models.CharField(max_length=50)  # This field will be automatically populated
+    segment = models.ForeignKey('Segment', on_delete=models.CASCADE, related_name='time_resources_queue')
     segment_start = models.DateTimeField()
     segment_end = models.DateTimeField()
     date_created = models.DateField(auto_now_add=True)
-    resource_model = models.ForeignKey(ResourceModel, on_delete=models.CASCADE)
+    resource_model = models.ForeignKey('ResourceModel', on_delete=models.CASCADE)
     segment_params = models.ForeignKey('SegmentParam', on_delete=models.PROTECT, null=True, blank=True)
-
-    def save(self, *args, **kwargs):
-        # Before saving, update the 'segment' field based on the related SegmentParam's name
-        if self.segment_params:
-            self.segment = self.segment_params.name
-        super().save(*args, **kwargs)  # Call the "real" save() method
 
     def __str__(self):
         return f"{self.resource_item_code} ({self.segment})"

@@ -2,7 +2,8 @@ from django.utils import timezone
 from django.db.models import Q
 from django.db.models.functions import Now, ExtractWeekDay
 from django.db import transaction
-from config.models import TimeResourcesQueue, TimeResourcesQueueHistory, TimeResourceScheduleIndex, SegmentParam, ScheduleTemplate
+from config.models import (TimeResourcesQueue, TimeResourcesQueueHistory, 
+                           TimeResourceScheduleIndex, SegmentParam, ScheduleTemplate, Segment)
 import datetime
 
 
@@ -56,14 +57,15 @@ def start_of_day_process():
             ).first()
 
             if schedule_template:
+                segment_instance, created = Segment.objects.get_or_create(code='SHFT')
                 # Create and save TimeResourcesQueue object
                 TimeResourcesQueue.objects.create(
                     resource_item_code=trs.resource_item,
+                    segment=segment_instance,
                     segment_start=timezone.make_aware(datetime.datetime.combine(current_date, schedule_template.shift_start)),
                     segment_end=timezone.make_aware(datetime.datetime.combine(current_date, schedule_template.shift_end)),
                     date_created=timezone.now(),
                     resource_model=trs.resource_model,
-                    segment_params=SegmentParam.objects.get(code='CNTN'),
                 )
 
 def alpha_to_numeric(alpha):
