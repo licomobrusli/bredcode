@@ -1,9 +1,10 @@
 # testsubmit_order.py
+from datetime import timedelta
 from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
-from .models import ServiceCategory, Services, ModalCount, Orders, OrderItems, Phase, PhaseResource, ResourceType, ResourceModel, Segment, SegmentParam, ResourceAvailability, TimeResourceItems
-from config.submit_order import identify_phases_for_order_item, identify_resources_for_phase
+from .models import ServiceCategory, Services, ModalCount, Orders, OrderItems, Phase, PhaseResource, ResourceType, ResourceModel, Segment, SegmentParam, ResourceAvailability, TimeResourceItems, TimeResourcesQueue
+from django.utils.timezone import now
 
 
 class OrderAPITests(TestCase):
@@ -62,14 +63,30 @@ class OrderAPITests(TestCase):
             service_code=self.service
         )
         
-        self.resource_type = ResourceType.objects.create(code='RT01', name='Type 1', measure='Unit', unit_size=1)
+        self.resource_type = ResourceType.objects.create(code='T', name='Time Resource', measure='Unit', unit_size=1)
         self.resource_model = ResourceModel.objects.create(code='RM01', name='Model 1', type=self.resource_type, cost_per_unit=100.00, no_of_units=10, fungible=True)
 
         # Phases and resources setup for the new test case
-        self.phase1 = Phase.objects.create(code='PH01', name='Phase 1', item_code=self.modal_count_shampoo, sequence=1, duration=10)
-        self.phase2 = Phase.objects.create(code='PH02', name='Phase 2', item_code=self.modal_count_conditioner, sequence=2, duration=15)
+        self.phase1 = Phase.objects.create(code='PH01', name='Phase 1', modal_count=self.modal_count_shampoo, sequence=1, duration=10)
+        self.phase2 = Phase.objects.create(code='PH02', name='Phase 2', modal_count=self.modal_count_conditioner, sequence=2, duration=15)
         PhaseResource.objects.create(code='PR01', name='Resource 1', phase_code=self.phase1, resource_models_code=self.resource_model, resource_types_code=self.resource_type)
         PhaseResource.objects.create(code='PR02', name='Resource 2', phase_code=self.phase2, resource_models_code=self.resource_model, resource_types_code=self.resource_type)
+
+        self.timeResourceItem = TimeResourceItems.objects.create(
+            resource_item_code='TRI001',
+            name='Test Resource Item',
+            description='A test resource item for availability',
+            start_date=now().date(),
+            resource_model=self.resource_model
+        )
+
+        self.resource_availability1 = ResourceAvailability.objects.create(
+            resource_item=self.timeResourceItem,
+            resource_model=self.resource_model,
+            available_start=now(),
+            available_end=now() + timedelta(hours=2),
+            duration=timedelta(minutes=120),  # Example duration
+        )
 
     def test_create_order_and_order_items(self):
         # Arrange
@@ -116,3 +133,16 @@ class OrderAPITests(TestCase):
             self.assertEqual(order.orderitems_set.count(), 2)
             for item_data in order_data['items']:
                 self.assertTrue(OrderItems.objects.filter(order=order, item_name=item_data['item_name'], item_price=item_data['item_price']).exists())
+
+        # Verify TimeResourcesQueue creation
+        trqs = TimeResourceItems.objects.all()
+        self.assertEqual(trqs.count(), 1)
+        self.assertTrue(trqs.filter(resource_model=self.resource_model).exists())
+        self.assertTrue(trqs.filter(resource_model=self.resource_model).exists())
+
+        # Verify TimeResourcesQueue creation
+        trqs = TimeResourcesQueue.objects.all()
+        self.assertGreater(trqs.count(), 0, "TimeResourcesQueue entries should be created")
+        for trq in trqs:
+            self.assertTrue(trq.resource_item_code is not None, "Resource item code should be set")
+            self.assertTrue(trq.segment is not None, "Segment should be set")

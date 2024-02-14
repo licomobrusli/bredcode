@@ -264,9 +264,9 @@ class ResourceModel(models.Model):
 class Phase(models.Model):
     code = models.CharField(max_length=5, unique=True)
     name = models.CharField(max_length=100)
-    item_code = models.ForeignKey(ModalCount, on_delete=models.CASCADE, related_name='banana')
     sequence = models.IntegerField()
     duration = models.IntegerField()
+    modal_count = models.ForeignKey(ModalCount, on_delete=models.PROTECT, null=True, blank=True)
     date_created = models.DateField(auto_now_add=True)
 
     def __str__(self):

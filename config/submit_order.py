@@ -11,7 +11,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 def identify_phases_for_order_item(order_item):
-    phases = Phase.objects.filter(item_code=order_item.modal_count).order_by('sequence')
+    phases = Phase.objects.filter(modal_count=order_item.modal_count).order_by('sequence')
     logger.debug(f"Identified phases for item {order_item.item_name}: {[phase.name for phase in phases]}")
     return phases
 
