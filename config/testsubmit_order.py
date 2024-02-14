@@ -64,7 +64,24 @@ class OrderAPITests(TestCase):
         )
         
         self.resource_type = ResourceType.objects.create(code='T', name='Time Resource', measure='Unit', unit_size=1)
-        self.resource_model = ResourceModel.objects.create(code='RM01', name='Model 1', type=self.resource_type, cost_per_unit=100.00, no_of_units=10, fungible=True)
+        self.resource_model = ResourceModel.objects.create(code='RM01', name='Model 1', type=self.resource_type, cost_per_unit=100.00, no_of_units=10, fungible=False)
+
+        container_segment_param = SegmentParam.objects.create(
+            code='CTNT',
+            name='Container Segment',
+            container=True,
+            calc_available=1
+        )
+        
+        segment_instance = Segment.objects.create(
+            code='SHFT',
+            type='SC',
+            segment_param=container_segment_param
+        )
+        
+        today = now().replace(hour=0, minute=0, second=0, microsecond=0)
+        container_start = today.replace(hour=10)
+        container_end = today.replace(hour=22)
 
         # Phases and resources setup for the new test case
         self.phase1 = Phase.objects.create(code='PH01', name='Phase 1', modal_count=self.modal_count_shampoo, sequence=1, duration=10)
@@ -80,12 +97,13 @@ class OrderAPITests(TestCase):
             resource_model=self.resource_model
         )
 
-        self.resource_availability1 = ResourceAvailability.objects.create(
-            resource_item=self.timeResourceItem,
+        self.container_trq = TimeResourcesQueue.objects.create(
+            resource_item_code=self.timeResourceItem,
+            segment=segment_instance,
+            segment_start=container_start,
+            segment_end=container_end,
             resource_model=self.resource_model,
-            available_start=now(),
-            available_end=now() + timedelta(hours=2),
-            duration=timedelta(minutes=120),  # Example duration
+            segment_params=container_segment_param
         )
 
     def test_create_order_and_order_items(self):
@@ -118,7 +136,7 @@ class OrderAPITests(TestCase):
         # Act
         response = self.client.post(url, order_data, format='json')
 
-        # Assert
+        # Verify response status and content
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('status', response.data)
         self.assertEqual(response.data['status'], 'OK')
@@ -133,6 +151,22 @@ class OrderAPITests(TestCase):
             self.assertEqual(order.orderitems_set.count(), 2)
             for item_data in order_data['items']:
                 self.assertTrue(OrderItems.objects.filter(order=order, item_name=item_data['item_name'], item_price=item_data['item_price']).exists())
+
+            # Assertions for phase and resource allocation
+            for item in order.orderitems_set.all():
+                phases = Phase.objects.filter(modal_count=item.modal_count).order_by('sequence')
+                self.assertGreater(phases.count(), 0, f"Phases should be defined for modal count {item.modal_count}")
+                
+                for phase in phases:
+                    phase_resources = PhaseResource.objects.filter(phase_code=phase)
+                    self.assertGreater(phase_resources.count(), 0, f"Resources should be allocated for phase {phase.code}")
+                    
+                    for phase_resource in phase_resources:
+                        trq_exists = TimeResourcesQueue.objects.filter(
+                            segment__modal_count=item.modal_count,
+                            resource_model=phase_resource.resource_models_code
+                        ).exists()
+                        self.assertTrue(trq_exists, f"TimeResourcesQueue entry should exist for resource model {phase_resource.resource_models_code.code} and segment {item.modal_count.code}")
 
         # Verify TimeResourcesQueue creation
         trqs = TimeResourceItems.objects.all()
