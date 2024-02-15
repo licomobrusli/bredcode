@@ -3,7 +3,7 @@ from django.db.models import Q
 from django.db.models.functions import Now, ExtractWeekDay
 from django.db import transaction
 from config.models import (TimeResourcesQueue, TimeResourcesQueueHistory, 
-                           TimeResourceScheduleIndex, SegmentParam, ScheduleTemplate, Segment)
+                           TimeResourceScheduleIndex, ScheduleTemplate, Segment)
 import datetime
 
 

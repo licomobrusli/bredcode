@@ -7,7 +7,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import datetime, timedelta, date
 
 class ServiceCategory(models.Model):
-    code = models.CharField(max_length=4, unique=True)
+    code = models.CharField(max_length=5, unique=True)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255, blank=True, null=True)
     image_path = models.CharField(max_length=1000, blank=True, null=True)
@@ -22,7 +22,7 @@ class ServiceCategory(models.Model):
 
 
 class Services(models.Model):
-    code = models.CharField(max_length=4, unique=True)
+    code = models.CharField(max_length=5, unique=True)
     service_category = models.ForeignKey(ServiceCategory, on_delete=models.PROTECT, null=True, blank=True)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255, blank=True, null=True)
@@ -39,7 +39,7 @@ class Services(models.Model):
         ordering = ['id']  # Default ordering
 
 class ModalSelect(models.Model):
-    code = models.CharField(max_length=4, unique=True)
+    code = models.CharField(max_length=5, unique=True)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255, blank=True, null=True)
     duration = models.IntegerField()
