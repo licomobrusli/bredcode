@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+from .logging_config import LOGGING
 from pathlib import Path
 import environ
 
@@ -37,25 +38,6 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
 
 # Application definition
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'loggers': {
-        '': {  # root logger
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
-}
-
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

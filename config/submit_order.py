@@ -9,6 +9,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Orders, OrderItems, ModalCount, Phase, PhaseResource, ResourceType, ResourceAvailability, TimeResourcesQueue, Segment, SegmentParam
 import logging
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ def identify_resources_for_phase(phase):
     time_resources_code = 'T'
     resources = PhaseResource.objects.filter(
         phase_code=phase, 
-        resource_types_code=time_resources_code
+        resource_types_code__code=time_resources_code
     )
     logger.debug(f"Identified time resources for phase {phase.name}: {[resource.resource_models_code.name for resource in resources]}")
     return resources
@@ -94,7 +95,7 @@ def create_order_and_items(request):
                 for resource in time_resources:
                     start_time, end_time, resource_item = find_earliest_availability(resource.resource_models_code.code, phase.duration, last_phase_end_time)
                     if start_time and end_time and resource_item:
-                        segment = Segment.objects.filter(modal_count=order_item.modal_count).first()
+                        segment = Segment.objects.filter(code=order_item.modal_count.code.code).first()
                         if not segment:
                             logger.error("No segment found for the modal count: %s", order_item.modal_count.code)
                             continue
@@ -110,6 +111,6 @@ def create_order_and_items(request):
                         last_phase_end_time = end_time
                     else:
                         logger.error("No availability found for resource: %s, phase: %s", resource.name, phase.name)
-                                # Handle no availability scenario, e.g., break or return an error response
+                                # Handle no availability scenario with break
 
         return Response({'status': 'OK', 'order_number': order.order_number})

@@ -1,7 +1,10 @@
 from django.apps import AppConfig
+import logging
 
 class ConfigAppConfig(AppConfig):
     name = 'config'
 
     def ready(self):
-        import config.signals  # Import the signals module to connect signal handlers
+        logger = logging.getLogger(__name__)
+        logger.info('Config app is starting up.')  # Test message
+        import config.signals  # Assuming this is correct

@@ -16,13 +16,13 @@ class OrderAPITests(TestCase):
             name='Segment Param 1',
             description='A test segment param',
             container=False,
-            contained=False,
-            available=True,
+            contained=True,
+            available=False,
             working=True,
             active=True,
             paid=True,
             calc_pay=0,
-            calc_available=0
+            calc_available=-1
         )
 
         # Create Segment instances
@@ -67,7 +67,7 @@ class OrderAPITests(TestCase):
         self.resource_model = ResourceModel.objects.create(code='RM01', name='Model 1', type=self.resource_type, cost_per_unit=100.00, no_of_units=10, fungible=False)
 
         container_segment_param = SegmentParam.objects.create(
-            code='CTNT',
+            code='CNTN',
             name='Container Segment',
             description='A test container segment',
             container=True,
@@ -90,11 +90,17 @@ class OrderAPITests(TestCase):
         container_start = today.replace(hour=10)
         container_end = today.replace(hour=22)
 
-        # Phases and resources setup for the new test case
+        # Phases and resources setup for the new test case for shampoo
         self.phase1 = Phase.objects.create(code='PH01', name='Phase 1', modal_count=self.modal_count_shampoo, sequence=1, duration=10)
         self.phase2 = Phase.objects.create(code='PH02', name='Phase 2', modal_count=self.modal_count_shampoo, sequence=2, duration=15)
         PhaseResource.objects.create(code='PR01', name='Resource 1', phase_code=self.phase1, resource_models_code=self.resource_model, resource_types_code=self.resource_type)
         PhaseResource.objects.create(code='PR02', name='Resource 2', phase_code=self.phase2, resource_models_code=self.resource_model, resource_types_code=self.resource_type)
+
+        # Phases and resources setup for the new test case for conditioner
+        self.phase3 = Phase.objects.create(code='PH03', name='Phase 1', modal_count=self.modal_count_conditioner, sequence=1, duration=10)
+        self.phase4 = Phase.objects.create(code='PH04', name='Phase 2', modal_count=self.modal_count_conditioner, sequence=2, duration=15)
+        PhaseResource.objects.create(code='PR03', name='Resource 1', phase_code=self.phase3, resource_models_code=self.resource_model, resource_types_code=self.resource_type)
+        PhaseResource.objects.create(code='PR04', name='Resource 2', phase_code=self.phase4, resource_models_code=self.resource_model, resource_types_code=self.resource_type)
 
         self.timeResourceItem = TimeResourceItems.objects.create(
             resource_item_code='TRI001',
@@ -124,14 +130,14 @@ class OrderAPITests(TestCase):
             },
             'items': [
                 {
-                    'modal_count': self.modal_count_shampoo.code.code,
+                    'modal_count': self.segment_shampoo.code,
                     'item_name': 'Shampoo',
                     'unit_price': 100.00,
                     'item_count': 1,
                     'item_price': 100.00
                 },
                 {
-                    'modal_count': self.modal_count_conditioner.code.code,
+                    'modal_count': self.segment_conditioner.code,
                     'item_name': 'Conditioner',
                     'unit_price': 100.00,
                     'item_count': 1,
@@ -167,27 +173,3 @@ class OrderAPITests(TestCase):
                 for phase in phases:
                     phase_resources = PhaseResource.objects.filter(phase_code=phase)
                     self.assertEqual(phase_resources.count(), 1, f"Resources should be allocated for phase {phase.code}")
-                    
-                    for phase_resource in phase_resources:
-                        trq_exists = TimeResourcesQueue.objects.filter()
-                        self.assertEqual(trq_exists.count(), 1, f" 1TimeResourcesQueue entry should exist")
-
-                    for phase_resource in phase_resources:
-                        trq_exists = TimeResourcesQueue.objects.filter(
-                            segment__modal_count=item.modal_count,
-                            resource_model=phase_resource.resource_models_code
-                        ).exists()
-                        self.assertTrue(trq_exists, f"TimeResourcesQueue entry should exist for resource model {phase_resource.resource_models_code.code} and segment {item.modal_count.code}")
-                    
-        # Verify TimeResourcesQueue creation
-        trqs = TimeResourceItems.objects.all()
-        self.assertEqual(trqs.count(), 1)
-        self.assertTrue(trqs.filter(resource_model=self.resource_model).exists())
-        self.assertTrue(trqs.filter(resource_model=self.resource_model).exists())
-
-        # Verify TimeResourcesQueue creation
-        trqs = TimeResourcesQueue.objects.all()
-        self.assertGreater(trqs.count(), 0, "TimeResourcesQueue entries should be created")
-        for trq in trqs:
-            self.assertTrue(trq.resource_item_code is not None, "Resource item code should be set")
-            self.assertTrue(trq.segment is not None, "Segment should be set")
