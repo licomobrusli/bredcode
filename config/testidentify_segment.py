@@ -64,4 +64,4 @@ class SegmentRetrievalTest(TestCase):
                 
         # Check that the segment was successfully retrieved
         self.assertIsNotNone(segment, "Segment was not retrieved successfully")
-        self.assertEqual(segment.code, self.modal_count.code, "Retrieved segment does not match expected modal count code")
+        self.assertEqual(segment.code, self.modal_count.code.code, "Retrieved segment does not match expected modal count code")

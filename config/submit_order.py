@@ -9,6 +9,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Orders, OrderItems, ModalCount, Phase, PhaseResource, ResourceType, ResourceAvailability, TimeResourcesQueue, Segment, SegmentParam
 import logging
+from django.utils import timezone
 import sys
 
 logger = logging.getLogger(__name__)
@@ -55,6 +56,22 @@ def find_earliest_availability(resource_model_code, phase_duration, last_phase_e
 
     return None, None, None
 
+def create_time_resource_queue_entry(resource_item_code, segment, segment_start, segment_end, resource_model, segment_params=None):
+    new_queue_entry = TimeResourcesQueue(
+        resource_item_code=resource_item_code,
+        segment=segment,
+        segment_start=segment_start,
+        segment_end=segment_end,
+        resource_model=resource_model,
+        segment_params=segment_params,
+    )
+
+    # Save the new queue entry
+    new_queue_entry.save()
+
+    # Return the new entry
+    return new_queue_entry
+
 @api_view(['POST'])
 def create_order_and_items(request):
     with transaction.atomic():
@@ -95,22 +112,20 @@ def create_order_and_items(request):
                 for resource in time_resources:
                     start_time, end_time, resource_item = find_earliest_availability(resource.resource_models_code.code, phase.duration, last_phase_end_time)
                     if start_time and end_time and resource_item:
-                        segment = Segment.objects.filter(code=order_item.modal_count.code.code).first()
-                        if not segment:
-                            logger.error("No segment found for the modal count: %s", order_item.modal_count.code)
-                            continue
-                        
-                        TimeResourcesQueue.objects.create(
+                        # Here we use the 'create_time_resource_queue_entry' function to save the resource's availability
+                        new_queue_entry = create_time_resource_queue_entry(
                             resource_item_code=resource_item,
-                            segment=segment,
+                            segment=phase,
                             segment_start=start_time,
                             segment_end=end_time,
                             resource_model=resource.resource_models_code,
-                            segment_params=segment.segment_param
+                            
                         )
+                        logger.debug(f"Created new queue entry for resource item: {new_queue_entry}")
                         last_phase_end_time = end_time
-                    else:
-                        logger.error("No availability found for resource: %s, phase: %s", resource.name, phase.name)
-                                # Handle no availability scenario with break
-
+                        break
+                else:
+                    logger.error(f"No available resource found for phase {phase.name} of item {order_item.item_name}")
+                    raise ValueError(f"No available resource found for phase {phase.name} of item {order_item.item_name}")
+                
         return Response({'status': 'OK', 'order_number': order.order_number})

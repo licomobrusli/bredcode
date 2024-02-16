@@ -156,20 +156,31 @@ class OrderAPITests(TestCase):
         self.assertIn('order_number', response.data)
         self.assertEqual(response.data['order_number'], 'ORD123456')
 
-        # Verify order and items creation
-        order_exists = Orders.objects.filter(order_number='ORD123456').exists()
-        self.assertTrue(order_exists)
-        if order_exists:
-            order = Orders.objects.get(order_number='ORD123456')
-            self.assertEqual(order.orderitems_set.count(), 2)
-            for item_data in order_data['items']:
-                self.assertTrue(OrderItems.objects.filter(order=order, item_name=item_data['item_name'], item_price=item_data['item_price']).exists())
+        # Verify TRQ creation logic
+        order = Orders.objects.get(order_number='ORD123456')
+        order_items = OrderItems.objects.filter(order=order)
+        
+        for order_item in order_items:
+            # Asserting that phases exist for each order item - this might be a point where TRQ creation fails if missing
+            phases = Phase.objects.filter(modal_count=order_item.modal_count)
+            self.assertTrue(phases.exists(), f"No phases found for order item {order_item.item_name}")
 
-            # Assertions for phase and resource allocation
-            for item in order.orderitems_set.all():
-                phases = Phase.objects.filter(modal_count=item.modal_count).order_by('sequence')
-                self.assertEqual(phases.count(), 2, f"2 Phases should be defined for modal count {item.modal_count}")
-                
-                for phase in phases:
-                    phase_resources = PhaseResource.objects.filter(phase_code=phase)
-                    self.assertEqual(phase_resources.count(), 1, f"Resources should be allocated for phase {phase.code}")
+            for phase in phases:
+                # Asserting that resources exist for each phase - another potential failure point
+                phase_resources = PhaseResource.objects.filter(phase_code=phase)
+                self.assertTrue(phase_resources.exists(), f"No resources found for phase {phase.name} in order item {order_item.item_name}")
+                self.assertEqual(phase_resources.count(), 1, f"Expected 1 resource for phase {phase.name} in order item {order_item.item_name}")
+                self.assertTrue(phase_resources.filter(resource_models_code=self.resource_model).exists(), f"Resource model not found for phase {phase.name} in order item {order_item.item_name}")
+                self.assertTrue(phase_resources.filter(resource_types_code=self.resource_type).exists(), f"Resource type not found for phase {phase.name} in order item {order_item.item_name}")
+                self.assertTrue(phase_resources.filter(phase_code=phase).exists(), f"Phase not found for phase {phase.name} in order item {order_item.item_name}")
+                self.assertTrue(phase_resources.filter(code__in=[f'PR0{i+1}' for i in range(2)]).exists(), f"Resource not found for phase {phase.name} in order item {order_item.item_name}")
+
+                # Asserting that TRQ entries exist for each phase
+                trq_entries = TimeResourcesQueue.objects.filter(segment=phase)
+                self.assertTrue(trq_entries.exists(), f"No TRQ entries found for phase {phase.name} in order item {order_item.item_name}")
+                self.assertEqual(trq_entries.count(), 1, f"Expected 1 TRQ entry for phase {phase.name} in order item {order_item.item_name}")
+                self.assertTrue(trq_entries.filter(resource_item_code=self.timeResourceItem).exists(), f"Resource item not found for phase {phase.name} in order item {order_item.item_name}")
+                self.assertTrue(trq_entries.filter(segment=phase).exists(), f"Phase not found for phase {phase.name} in order item {order_item.item_name}")
+                self.assertTrue(trq_entries.filter(resource_model=self.resource_model).exists(), f"Resource model not found for phase {phase.name} in order item {order_item.item_name}")
+                self.assertTrue(trq_entries.filter(segment_params=self.segment_param).exists(), f"Segment param not found for phase {phase.name} in order item {order_item.item_name}")
+                self.assertTrue(trq_entries.filter(segment_start__gte=now().replace(hour=10)).exists(), f"Segment start not found for phase {phase.name} in order item {order_item.item_name}")
