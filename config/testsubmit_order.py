@@ -69,7 +69,14 @@ class OrderAPITests(TestCase):
         container_segment_param = SegmentParam.objects.create(
             code='CTNT',
             name='Container Segment',
+            description='A test container segment',
             container=True,
+            contained=False,
+            available=True,
+            working=True,
+            active=False,
+            paid=True,
+            calc_pay=1,
             calc_available=1
         )
         
@@ -85,7 +92,7 @@ class OrderAPITests(TestCase):
 
         # Phases and resources setup for the new test case
         self.phase1 = Phase.objects.create(code='PH01', name='Phase 1', modal_count=self.modal_count_shampoo, sequence=1, duration=10)
-        self.phase2 = Phase.objects.create(code='PH02', name='Phase 2', modal_count=self.modal_count_conditioner, sequence=2, duration=15)
+        self.phase2 = Phase.objects.create(code='PH02', name='Phase 2', modal_count=self.modal_count_shampoo, sequence=2, duration=15)
         PhaseResource.objects.create(code='PR01', name='Resource 1', phase_code=self.phase1, resource_models_code=self.resource_model, resource_types_code=self.resource_type)
         PhaseResource.objects.create(code='PR02', name='Resource 2', phase_code=self.phase2, resource_models_code=self.resource_model, resource_types_code=self.resource_type)
 
@@ -155,19 +162,23 @@ class OrderAPITests(TestCase):
             # Assertions for phase and resource allocation
             for item in order.orderitems_set.all():
                 phases = Phase.objects.filter(modal_count=item.modal_count).order_by('sequence')
-                self.assertGreater(phases.count(), 0, f"Phases should be defined for modal count {item.modal_count}")
+                self.assertEqual(phases.count(), 2, f"2 Phases should be defined for modal count {item.modal_count}")
                 
                 for phase in phases:
                     phase_resources = PhaseResource.objects.filter(phase_code=phase)
-                    self.assertGreater(phase_resources.count(), 0, f"Resources should be allocated for phase {phase.code}")
+                    self.assertEqual(phase_resources.count(), 1, f"Resources should be allocated for phase {phase.code}")
                     
+                    for phase_resource in phase_resources:
+                        trq_exists = TimeResourcesQueue.objects.filter()
+                        self.assertEqual(trq_exists.count(), 1, f" 1TimeResourcesQueue entry should exist")
+
                     for phase_resource in phase_resources:
                         trq_exists = TimeResourcesQueue.objects.filter(
                             segment__modal_count=item.modal_count,
                             resource_model=phase_resource.resource_models_code
                         ).exists()
                         self.assertTrue(trq_exists, f"TimeResourcesQueue entry should exist for resource model {phase_resource.resource_models_code.code} and segment {item.modal_count.code}")
-
+                    
         # Verify TimeResourcesQueue creation
         trqs = TimeResourceItems.objects.all()
         self.assertEqual(trqs.count(), 1)

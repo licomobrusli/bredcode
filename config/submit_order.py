@@ -1,6 +1,8 @@
 # submit_order.py
 from django.db import transaction, models
 from django.shortcuts import get_object_or_404
+from django.db.models import Q, F
+from django.db.models.functions import Coalesce
 from django.utils.timezone import now
 from datetime import timedelta
 from rest_framework.decorators import api_view
@@ -27,30 +29,29 @@ def identify_resources_for_phase(phase):
 
 
 def find_earliest_availability(resource_model_code, phase_duration, last_phase_end_time=None):
-    initial_start_time = now() if last_phase_end_time is None else max(now(), last_phase_end_time)
+    initial_start_time = now().replace(microsecond=0)
+    if last_phase_end_time:
+        initial_start_time = max(initial_start_time, last_phase_end_time)
 
-    availability = ResourceAvailability.objects.annotate(
-        live_start=models.functions.Coalesce(
-            models.Case(
-                models.When(available_start__gte=initial_start_time, then='available_start'),
-                default=models.Value(initial_start_time)
-            ),
-            output_field=models.DateTimeField()
-        ),
-        live_end=models.ExpressionWrapper(
-            models.F('live_start') + timedelta(minutes=phase_duration),
-            output_field=models.DateTimeField()
-        )
-    ).filter(
-        resource_model=resource_model_code,
-        available_end__gte=models.F('live_end')
+    # Adjust the filter conditions based on the corrected logic
+    conditions = Q(
+        available_start__lt=initial_start_time,
+        available_end__gte=initial_start_time + timedelta(minutes=phase_duration)
+    ) | Q(
+        available_start__gte=initial_start_time,
+        available_end__gte=F('available_start') + timedelta(minutes=phase_duration)
+    )
+
+    # Apply the corrected conditions
+    availability = ResourceAvailability.objects.filter(
+        conditions,
+        resource_model=resource_model_code
     ).order_by('available_start').first()
-    
-    if availability:
-        # No need for additional checks, as the availability has already been confirmed
-        return availability.live_start, availability.live_start + timedelta(minutes=phase_duration), availability.resource_item
 
-    # If no suitable availability is found, return None
+    if availability:
+        actual_start_time = max(availability.available_start, initial_start_time)
+        return actual_start_time, actual_start_time + timedelta(minutes=phase_duration), availability.resource_item
+
     return None, None, None
 
 @api_view(['POST'])
