@@ -11,6 +11,18 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from .logging_config import LOGGING
+
+import logging
+from django.conf import settings
+
+logger = logging.getLogger(__name__)
+print("DEBUG Mode:", settings.DEBUG)  # This will print out the debug status
+print("Logging directory:", LOGGING['handlers']['file']['filename'])  # This will print out the path to the debug.log file
+
+# Test the logging at startup
+logger.debug('Django startup: Logging system is initialized.')
+
+
 from pathlib import Path
 import environ
 
@@ -32,7 +44,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env('DEBUG')
+DEBUG = True
+print("ENV DEBUG:", env('DEBUG'))
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 

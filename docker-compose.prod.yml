@@ -9,22 +9,24 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./logs:/usr/src/app/logs
     env_file: .env
-  
+
   web:
     build:
       context: .
       dockerfile: Dockerfile.prod
     command: >
-      sh -c "/wait-for-it.sh db:5432 -- python manage.py migrate &&
-              gunicorn config.wsgi:application --bind 0.0.0.0:8000"
+      sh -c "/wait-for-it.sh db:5432 -- && python manage.py runserver 0.0.0.0:8000"
     ports:
       - "8000:8000"
+      - "5678:5678"
     volumes:
-      - ./logs:/home/app/web/logs  # Add this line
+      - .:/usr/src/app
       - ./logs:/usr/src/app/logs
     env_file: .env
+    environment:
+      - DEBUG=True
     depends_on:
       - db
-
+      
 volumes:
   postgres_data:
