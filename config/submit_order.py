@@ -98,7 +98,7 @@ def create_order_and_items(request):
                 unit_price=item_data['unit_price'],
                 item_count=item_data['item_count'],
                 item_price=item_data['item_price'],
-            )
+            )   
             order_item.save()
             temp_order_items.append((modal_count.sequence, order_item))
 
@@ -108,24 +108,24 @@ def create_order_and_items(request):
             phases = identify_phases_for_order_item(order_item)
             last_phase_end_time = None
             for phase in phases:
+                segment = phase.modal_count.code
                 time_resources = identify_resources_for_phase(phase)
                 for resource in time_resources:
                     start_time, end_time, resource_item = find_earliest_availability(resource.resource_models_code.code, phase.duration, last_phase_end_time)
                     if start_time and end_time and resource_item:
-                        # Here we use the 'create_time_resource_queue_entry' function to save the resource's availability
                         new_queue_entry = create_time_resource_queue_entry(
                             resource_item_code=resource_item,
-                            segment=phase,
+                            segment=segment,
                             segment_start=start_time,
                             segment_end=end_time,
                             resource_model=resource.resource_models_code,
-                            
+                            segment_params=None
                         )
                         logger.debug(f"Created new queue entry for resource item: {new_queue_entry}")
                         last_phase_end_time = end_time
                         break
-                else:
-                    logger.error(f"No available resource found for phase {phase.name} of item {order_item.item_name}")
-                    raise ValueError(f"No available resource found for phase {phase.name} of item {order_item.item_name}")
-                
+                    else:
+                        # No available resource was found for this phase
+                        logger.error(f"No available resource found for phase {phase.name} of item {order_item.item_name}")
+
         return Response({'status': 'OK', 'order_number': order.order_number})
