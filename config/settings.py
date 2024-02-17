@@ -91,10 +91,11 @@ DATABASES = {
         'NAME': env('POSTGRES_DB'),
         'USER': env('POSTGRES_USER'),
         'PASSWORD': env('POSTGRES_PASSWORD'),
-        'HOST': env('DATABASE_HOST', default='localhost'),  # Change 'db' to 'localhost' when running locally
+        'HOST': 'db',  # This should match the service name in docker-compose.yml
         'PORT': '5432',
     }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
