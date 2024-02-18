@@ -9,9 +9,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from config.models import ServiceCategory, Services, ModalCount, ModalSelect, Orders, OrderItems
 from .serializers import  ServiceCategorySerializer, ServicesSerializer, ModalCountSerializer, ModalSelectSerializer, OrdersSerializer, OrderItemsSerializer
+import logging
 
 class ServiceCategoryList(APIView):
     def get(self, request, format=None):
+        logging.debug('ServiceCategoryList #############################')
         category_code = request.query_params.get('categoryCode', None)
         if category_code:
             categories = ServiceCategory.objects.filter(code=category_code)[:1]

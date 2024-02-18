@@ -10,14 +10,9 @@ from rest_framework.response import Response
 from .models import Orders, OrderItems, ModalCount, Phase, PhaseResource, ResourceType, ResourceAvailability, TimeResourcesQueue, Segment, SegmentParam, SimpleModel
 import logging
 from django.utils import timezone
-import sys
-
-logger = logging.getLogger(__name__)
-logger.debug('SUBMIT_ORDER.PY')
 
 def identify_phases_for_order_item(order_item):
     phases = Phase.objects.filter(modal_count=order_item.modal_count).order_by('sequence')
-    logger.debug(f"Identified phases for item {order_item.item_name}: {[phase.name for phase in phases]}")
     return phases
 
 def identify_resources_for_phase(phase):
@@ -27,7 +22,6 @@ def identify_resources_for_phase(phase):
         phase_code=phase, 
         resource_types_code__code=time_resources_code
     )
-    logger.debug(f"Identified time resources for phase {phase.name}: {[resource.resource_models_code.name for resource in resources]}")
     return resources
 
 
@@ -85,10 +79,9 @@ def create_entry_in_simple_model():
 @api_view(['POST'])
 def create_order_and_items(request):
     with transaction.atomic():
-        logger.debug('CREATE_ORDER_AND_ITEMS')
+        logging.debug('CREATE_ORDER_AND_ITEMS ##########################################')
         order_data = request.data.get('order')
         order_number = order_data.get('order_number')
-        logger.debug("Received order number: %s", order_number)
 
         order = Orders(
             item_count=order_data['item_count'],
@@ -138,6 +131,6 @@ def create_order_and_items(request):
                         last_phase_end_time = end_time
                         break
                     else:
-                        logger.error(f"No available resource found for phase {phase.name} of item {order_item.item_name}")
+                        logging.error(f"No available resource found for phase {phase.name} of item {order_item.item_name}")
 
         return Response({'status': 'OK', 'order_number': order.order_number})
