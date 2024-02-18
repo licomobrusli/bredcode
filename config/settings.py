@@ -15,17 +15,12 @@ import logging
 from django.conf import settings
 import os
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
-print("DEBUuuuuuG Mode:", settings.DEBUG)  # This will print out the debug status
+print("DEBUG Mode:", settings.DEBUG)  # This will print out the debug status
 
 logger = logging.getLogger(__name__)
-print("DEBUG Mode:", settings.DEBUG)  # This will print out the debug status
-logger.debug('Docker container started - logging system initialized.')
+logger.debug('SETTINGS.PY')
+
 print("Logging directory:", LOGGING['handlers']['file']['filename'])  # This will print out the path to the debug.log file
-logger.debug('Django startup: Logging system is initialized.')
-
-# Test the logging at startup
-logger.debug('Django startup: Logging system is initialized.')
-
 
 from pathlib import Path
 import environ

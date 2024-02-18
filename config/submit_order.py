@@ -13,6 +13,7 @@ from django.utils import timezone
 import sys
 
 logger = logging.getLogger(__name__)
+logger.debug('SUBMIT_ORDER.PY')
 
 def identify_phases_for_order_item(order_item):
     phases = Phase.objects.filter(modal_count=order_item.modal_count).order_by('sequence')
@@ -84,6 +85,7 @@ def create_entry_in_simple_model():
 @api_view(['POST'])
 def create_order_and_items(request):
     with transaction.atomic():
+        logger.debug('CREATE_ORDER_AND_ITEMS')
         order_data = request.data.get('order')
         order_number = order_data.get('order_number')
         logger.debug("Received order number: %s", order_number)

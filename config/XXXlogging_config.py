@@ -23,11 +23,7 @@ LOGGING = {
             'style': '{',
         },
     },
-    'filters': {
-        'require_debug_true': {
-            '()': 'django.utils.log.RequireDebugTrue',
-        },
-    },
+
     'handlers': {
         'file': {
             'level': 'DEBUG',
@@ -43,20 +39,11 @@ LOGGING = {
         },
         'console': {
             'level': 'DEBUG',
-            'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
         },
     },
     'loggers': {
-        #######
-        # a general logger when using logging.debug without specifying the logger
-        "": {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',  # lowest level (active for DEBUG, ERROR, CRITICAL, FATAL)
-            'propagate': True,
-        },
-        #######
         'django': {
             'handlers': ['file', 'console'],
             'propagate': True,

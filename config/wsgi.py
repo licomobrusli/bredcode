@@ -15,7 +15,7 @@ print("WSGI/ASGI DEBUG Mode:", settings.DEBUG)
 
 import logging
 logger = logging.getLogger(__name__)
-logger.debug('Docker container started - logging system initialized.')
+logger.debug('WSGI.PY - Docker container started ##########################################')
 
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
