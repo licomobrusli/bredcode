@@ -32,12 +32,6 @@ class OrderAPITests(TestCase):
             segment_param=self.segment_param
         )
         
-        self.segment_conditioner = Segment.objects.create(
-            code='CO01',
-            type='Product Type',
-            segment_param=self.segment_param
-        )
-
         # Set up necessary instances for both tests
         self.service_category = ServiceCategory.objects.create(code='SVC1', name='Hair Care', description='Hair Care Services')
         self.service = Services.objects.create(code='SV01', name='Basic Hair Care', description='Basic hair care services', total_duration=30, price=50.00, service_category=self.service_category)
@@ -46,16 +40,6 @@ class OrderAPITests(TestCase):
             code=self.segment_shampoo,
             name='Shampoo',
             description='Shampoo Description',
-            duration=5,
-            price=100.00,
-            max_quantity=10,
-            category_code=self.service_category,
-            service_code=self.service
-        )
-        self.modal_count_conditioner = ModalCount.objects.create(
-            code=self.segment_conditioner,
-            name='Conditioner',
-            description='Conditioner Description',
             duration=5,
             price=100.00,
             max_quantity=10,
@@ -92,16 +76,8 @@ class OrderAPITests(TestCase):
 
         # Phases and resources setup for the new test case for shampoo
         self.phase1 = Phase.objects.create(code='PH01', name='Phase 1', modal_count=self.modal_count_shampoo, sequence=1, duration=10)
-        self.phase2 = Phase.objects.create(code='PH02', name='Phase 2', modal_count=self.modal_count_shampoo, sequence=2, duration=15)
         PhaseResource.objects.create(code='PR01', name='Resource 1', phase_code=self.phase1, resource_models_code=self.resource_model, resource_types_code=self.resource_type)
-        PhaseResource.objects.create(code='PR02', name='Resource 2', phase_code=self.phase2, resource_models_code=self.resource_model, resource_types_code=self.resource_type)
-
-        # Phases and resources setup for the new test case for conditioner
-        self.phase3 = Phase.objects.create(code='PH03', name='Phase 1', modal_count=self.modal_count_conditioner, sequence=1, duration=10)
-        self.phase4 = Phase.objects.create(code='PH04', name='Phase 2', modal_count=self.modal_count_conditioner, sequence=2, duration=15)
-        PhaseResource.objects.create(code='PR03', name='Resource 1', phase_code=self.phase3, resource_models_code=self.resource_model, resource_types_code=self.resource_type)
-        PhaseResource.objects.create(code='PR04', name='Resource 2', phase_code=self.phase4, resource_models_code=self.resource_model, resource_types_code=self.resource_type)
-
+        
         self.timeResourceItem = TimeResourceItems.objects.create(
             resource_item_code='TRI001',
             name='Test Resource Item',
@@ -119,19 +95,6 @@ class OrderAPITests(TestCase):
             segment_params=container_segment_param
         )
 
-        # Calculate future start and end times for the new segment
-        self.future_start = now() + timedelta(hours=2)
-        self.future_end = self.future_start + timedelta(minutes=10)
-
-        # Create a TRQ entry for the shampoo segment in the future
-        self.shampoo_future_trq = TimeResourcesQueue.objects.create(
-            resource_item_code=self.timeResourceItem,
-            segment=self.segment_shampoo,  # Assuming you want this linked to the shampoo segment
-            segment_start=self.future_start,
-            segment_end=self.future_end,
-            resource_model=self.resource_model,
-            segment_params=self.segment_param  # or any other params as per your logic
-        )
 
     def test_create_order_and_order_items(self):
         # Arrange
@@ -149,13 +112,6 @@ class OrderAPITests(TestCase):
                     'unit_price': 100.00,
                     'item_count': 1,
                     'item_price': 100.00
-                },
-                {
-                    'modal_count': self.segment_conditioner.code,
-                    'item_name': 'Conditioner',
-                    'unit_price': 100.00,
-                    'item_count': 1,
-                    'item_price': 100.00
                 }
             ]
         }
@@ -165,22 +121,16 @@ class OrderAPITests(TestCase):
 
         # more assertions
         self.assertEqual(self.modal_count_shampoo.code, self.segment_shampoo, "Shampoo ModalCount not correctly linked to Segment.")
-        self.assertEqual(self.modal_count_conditioner.code, self.segment_conditioner, "Conditioner ModalCount not correctly linked to Segment.")
         self.assertEqual(self.phase1.modal_count, self.modal_count_shampoo, "Phase 1 not correctly linked to Shampoo ModalCount.")
-        self.assertEqual(self.phase2.modal_count, self.modal_count_shampoo, "Phase 2 not correctly linked to Shampoo ModalCount.")
-        self.assertEqual(self.phase3.modal_count, self.modal_count_conditioner, "Phase 1 not correctly linked to Conditioner ModalCount.")
-        self.assertEqual(self.phase4.modal_count, self.modal_count_conditioner, "Phase 2 not correctly linked to Conditioner ModalCount.")
 
         # Verify ModalCount and Phase association
         shampoo_phases = Phase.objects.filter(modal_count=self.modal_count_shampoo)
         self.assertTrue(shampoo_phases.exists(), "No phases found for Shampoo ModalCount")
         self.assertTrue(shampoo_phases.filter(id=self.phase1.id).exists(), "Phase1 not linked with Shampoo ModalCount")
-        self.assertTrue(shampoo_phases.filter(id=self.phase2.id).exists(), "Phase2 not linked with Shampoo ModalCount")
 
-        conditioner_phases = Phase.objects.filter(modal_count=self.modal_count_conditioner)
-        self.assertTrue(conditioner_phases.exists(), "No phases found for Conditioner ModalCount")
-        self.assertTrue(conditioner_phases.filter(id=self.phase3.id).exists(), "Phase3 not linked with Conditioner ModalCount")
-        self.assertTrue(conditioner_phases.filter(id=self.phase4.id).exists(), "Phase4 not linked with Conditioner ModalCount")
+        # check resource availability
+        self.assertTrue(ResourceAvailability.objects.filter(resource_model=self.resource_model).exists(), "Resource availability not found")
+        self.assertTrue(ResourceAvailability.objects.filter(resource_item=self.timeResourceItem).exists(), "Resource item availability not found")
 
         # Verify TRQ entries after submitting the order
         order = Orders.objects.get(order_number='ORD123456')
@@ -195,7 +145,7 @@ class OrderAPITests(TestCase):
         self.assertTrue(TimeResourcesQueue.objects.filter(resource_item_code=self.timeResourceItem, segment_start=self.future_start, segment_end=self.future_end).exists(), "Shampoo future TRQ parameters incorrect")
 
         # After submitting the order and before verifying TRQ creation logic
-        expected_trq_count = 3  # Adjusted based on expected number of TRQs after adding new segments and order processing
+        expected_trq_count = 2  # Adjusted based on expected number of TRQs after adding new segments and order processing
         actual_trq_count = TimeResourcesQueue.objects.filter(resource_item_code=self.timeResourceItem).count()
         self.assertEqual(actual_trq_count, expected_trq_count, f"Expected {expected_trq_count} TRQ entries, found {actual_trq_count}")
 

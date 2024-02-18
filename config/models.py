@@ -427,3 +427,14 @@ class TimeResourceItems(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.resource_item_code})"
+    
+
+class SimpleModel(models.Model):
+    code = models.CharField(max_length=100, unique=True, primary_key=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+    class Meta:
+        db_table = 'simple_model'
+        ordering = ['code']

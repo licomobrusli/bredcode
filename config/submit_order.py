@@ -53,10 +53,11 @@ def find_earliest_availability(resource_model_code, phase_duration, last_phase_e
     if availability:
         actual_start_time = max(availability.available_start, initial_start_time)
         return actual_start_time, actual_start_time + timedelta(minutes=phase_duration), availability.resource_item
-
+    
     return None, None, None
 
 def create_time_resource_queue_entry(resource_item_code, segment, segment_start, segment_end, resource_model, segment_params=None):
+    print(f"Creating new queue entry for resource item: {resource_item_code}, segment: {segment}, start: {segment_start}, end: {segment_end}, resource model: {resource_model}")
     new_queue_entry = TimeResourcesQueue(
         resource_item_code=resource_item_code,
         segment=segment,
@@ -67,6 +68,7 @@ def create_time_resource_queue_entry(resource_item_code, segment, segment_start,
     )
 
     # Save the new queue entry
+    print(f"Saving new queue entry: {new_queue_entry}")
     new_queue_entry.save()
 
     # Return the new entry
@@ -103,7 +105,7 @@ def create_order_and_items(request):
             temp_order_items.append((modal_count.sequence, order_item))
 
         temp_order_items.sort(key=lambda x: x[0])
-
+        
         for _, order_item in temp_order_items:
             phases = identify_phases_for_order_item(order_item)
             last_phase_end_time = None
@@ -121,11 +123,9 @@ def create_order_and_items(request):
                             resource_model=resource.resource_models_code,
                             segment_params=None
                         )
-                        logger.debug(f"Created new queue entry for resource item: {new_queue_entry}")
                         last_phase_end_time = end_time
                         break
                     else:
-                        # No available resource was found for this phase
                         logger.error(f"No available resource found for phase {phase.name} of item {order_item.item_name}")
 
         return Response({'status': 'OK', 'order_number': order.order_number})

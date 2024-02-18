@@ -173,6 +173,5 @@ class FindEarliestAvailabilityTestCase(TestCase):
 
         # Expect no availability since the phase duration is longer than the available time
         self.assertIsNone(start_time)
-        print("TEST DEBUG")
         self.assertIsNone(end_time)
         self.assertIsNone(resource_item)

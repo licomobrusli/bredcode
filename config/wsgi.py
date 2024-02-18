@@ -10,6 +10,8 @@ https://docs.djangoproject.com/en/4.2/howto/deployment/wsgi/
 import os
 
 from django.core.wsgi import get_wsgi_application
+from django.conf import settings
+print("WSGI/ASGI DEBUG Mode:", settings.DEBUG)
 
 import logging
 logger = logging.getLogger(__name__)

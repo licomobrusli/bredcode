@@ -15,7 +15,7 @@ services:
       context: .
       dockerfile: Dockerfile.prod
     command: >
-      sh -c "/wait-for-it.sh db:5432 -- && python manage.py runserver 0.0.0.0:8000"
+      sh -c "/wait-for-it.sh db:5432 -- && python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
     ports:
       - "8000:8000"
       - "5678:5678"
