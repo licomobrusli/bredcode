@@ -3,7 +3,7 @@ from datetime import timedelta
 from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
-from .models import ServiceCategory, Services, ModalCount, Orders, OrderItems, Phase, PhaseResource, ResourceType, ResourceModel, Segment, SegmentParam, ResourceAvailability, TimeResourceItems, TimeResourcesQueue
+from .models import ServiceCategory, Services, ModalCount, Orders, OrderItems, Phase, PhaseResource, ResourceType, ResourceModel, Segment, SegmentParam, ResourceAvailability, TimeResourceItems, TimeResourcesQueue, SimpleModel
 from django.utils.timezone import now
 
 
@@ -132,6 +132,9 @@ class OrderAPITests(TestCase):
         self.assertTrue(ResourceAvailability.objects.filter(resource_model=self.resource_model).exists(), "Resource availability not found")
         self.assertTrue(ResourceAvailability.objects.filter(resource_item=self.timeResourceItem).exists(), "Resource item availability not found")
 
+        # verify create_entry_in_simple_model
+        self.assertTrue(SimpleModel.objects.exists(), "SimpleModel entry not found")
+
         # Verify TRQ entries after submitting the order
         order = Orders.objects.get(order_number='ORD123456')
         order_items = OrderItems.objects.filter(order=order)
@@ -148,8 +151,6 @@ class OrderAPITests(TestCase):
         expected_trq_count = 2  # Adjusted based on expected number of TRQs after adding new segments and order processing
         actual_trq_count = TimeResourcesQueue.objects.filter(resource_item_code=self.timeResourceItem).count()
         self.assertEqual(actual_trq_count, expected_trq_count, f"Expected {expected_trq_count} TRQ entries, found {actual_trq_count}")
-
-
 
         # Verify response status and content
         self.assertEqual(response.status_code, status.HTTP_200_OK)

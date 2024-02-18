@@ -7,7 +7,7 @@ from django.utils.timezone import now
 from datetime import timedelta
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Orders, OrderItems, ModalCount, Phase, PhaseResource, ResourceType, ResourceAvailability, TimeResourcesQueue, Segment, SegmentParam
+from .models import Orders, OrderItems, ModalCount, Phase, PhaseResource, ResourceType, ResourceAvailability, TimeResourcesQueue, Segment, SegmentParam, SimpleModel
 import logging
 from django.utils import timezone
 import sys
@@ -74,6 +74,13 @@ def create_time_resource_queue_entry(resource_item_code, segment, segment_start,
     # Return the new entry
     return new_queue_entry
 
+# write a function to #create entry in simple_model.code = 1
+def create_entry_in_simple_model():
+    simple_model = SimpleModel.objects.create(
+        code='1',
+    )
+    return simple_model
+
 @api_view(['POST'])
 def create_order_and_items(request):
     with transaction.atomic():
@@ -102,6 +109,7 @@ def create_order_and_items(request):
                 item_price=item_data['item_price'],
             )   
             order_item.save()
+            # create_entry_in_simple_model()
             temp_order_items.append((modal_count.sequence, order_item))
 
         temp_order_items.sort(key=lambda x: x[0])
@@ -109,12 +117,14 @@ def create_order_and_items(request):
         for _, order_item in temp_order_items:
             phases = identify_phases_for_order_item(order_item)
             last_phase_end_time = None
+            # create_entry_in_simple_model()
             for phase in phases:
                 segment = phase.modal_count.code
                 time_resources = identify_resources_for_phase(phase)
                 for resource in time_resources:
                     start_time, end_time, resource_item = find_earliest_availability(resource.resource_models_code.code, phase.duration, last_phase_end_time)
                     if start_time and end_time and resource_item:
+                        # create_entry_in_simple_model()
                         new_queue_entry = create_time_resource_queue_entry(
                             resource_item_code=resource_item,
                             segment=segment,
