@@ -7,9 +7,11 @@ from django.utils.timezone import now
 from datetime import timedelta
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Orders, OrderItems, ModalCount, Phase, PhaseResource, ResourceAvailability, TimeResourcesQueue, SimpleModel
-import logging
+from .models import Orders, OrderItems, ModalCount, Phase, PhaseResource, ResourceAvailability, TimeResourcesQueue, TimeResourceItems
 from django.utils import timezone
+
+import logging
+logger = logging.getLogger(__name__)
 
 def identify_phases_for_order_item(order_item):
     phases = Phase.objects.filter(modal_count=order_item.modal_count).order_by('sequence')
@@ -52,9 +54,12 @@ def find_earliest_availability(resource_model_code, phase_duration, last_phase_e
     return None, None, None
 
 def create_time_resource_queue_entry(resource_item_code, segment, segment_start, segment_end, resource_model, segment_params=None):
-    print(f"Creating new queue entry for resource item: {resource_item_code}, segment: {segment}, start: {segment_start}, end: {segment_end}, resource model: {resource_model}")
+    # Retrieve the TimeResourceItems instance corresponding to the provided resource_item_code
+    resource_item_instance = TimeResourceItems.objects.get(resource_item_code=resource_item_code)
+
+    # Create a new TimeResourcesQueue instance using the TimeResourceItems instance
     new_queue_entry = TimeResourcesQueue(
-        resource_item_code=resource_item_code,
+        resource_item_code=resource_item_instance,  # Assign the instance instead of the string
         segment=segment,
         segment_start=segment_start,
         segment_end=segment_end,
@@ -63,23 +68,15 @@ def create_time_resource_queue_entry(resource_item_code, segment, segment_start,
     )
 
     # Save the new queue entry
-    print(f"Saving new queue entry: {new_queue_entry}")
     new_queue_entry.save()
 
     # Return the new entry
     return new_queue_entry
 
-# write a function to #create entry in simple_model.code = 1
-def create_entry_in_simple_model():
-    simple_model = SimpleModel.objects.create(
-        code='1',
-    )
-    return simple_model
-
 @api_view(['POST'])
 def create_order_and_items(request):
     with transaction.atomic():
-        logging.debug('CREATE_ORDER_AND_ITEMS ##########################################')
+        logger.debug('CREATE_ORDER_AND_ITEMS ##########################################')
         order_data = request.data.get('order')
         order_number = order_data.get('order_number')
 
@@ -104,22 +101,18 @@ def create_order_and_items(request):
                 item_price=item_data['item_price'],
             )   
             order_item.save()
-            # create_entry_in_simple_model()
-            temp_order_items.append((modal_count.sequence, order_item))
 
         temp_order_items.sort(key=lambda x: x[0])
         
         for _, order_item in temp_order_items:
             phases = identify_phases_for_order_item(order_item)
             last_phase_end_time = None
-            # create_entry_in_simple_model()
             for phase in phases:
                 segment = phase.modal_count.code
                 time_resources = identify_resources_for_phase(phase)
                 for resource in time_resources:
                     start_time, end_time, resource_item = find_earliest_availability(resource.resource_models_code.code, phase.duration, last_phase_end_time)
                     if start_time and end_time and resource_item:
-                        # create_entry_in_simple_model()
                         new_queue_entry = create_time_resource_queue_entry(
                             resource_item_code=resource_item,
                             segment=segment,
@@ -131,6 +124,6 @@ def create_order_and_items(request):
                         last_phase_end_time = end_time
                         break
                     else:
-                        logging.error(f"No available resource found for phase {phase.name} of item {order_item.item_name}")
+                        logger.error(f"No available resource found for phase {phase.name} of item {order_item.item_name}")
 
         return Response({'status': 'OK', 'order_number': order.order_number})

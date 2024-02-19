@@ -7,7 +7,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./logs:/usr/src/app/logs
+      - ./logs:/home/app/web/logs
     env_file: .env
   
   web:
@@ -23,6 +23,6 @@ services:
       - DEBUG=True
     volumes:
       - .:/usr/src/app
-      - ./logs:/usr/src/app/logs
+      - ./logs:/home/app/web/logs
 volumes:
   postgres_data:

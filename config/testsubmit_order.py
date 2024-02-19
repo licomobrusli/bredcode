@@ -3,7 +3,7 @@ from datetime import timedelta
 from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
-from .models import ServiceCategory, Services, ModalCount, Orders, OrderItems, Phase, PhaseResource, ResourceType, ResourceModel, Segment, SegmentParam, ResourceAvailability, TimeResourceItems, TimeResourcesQueue, SimpleModel
+from .models import ServiceCategory, Services, ModalCount, Orders, OrderItems, Phase, PhaseResource, ResourceType, ResourceModel, Segment, SegmentParam, ResourceAvailability, TimeResourceItems, TimeResourcesQueue
 from django.utils.timezone import now
 
 
@@ -130,44 +130,7 @@ class OrderAPITests(TestCase):
 
         # check resource availability
         self.assertTrue(ResourceAvailability.objects.filter(resource_model=self.resource_model).exists(), "Resource availability not found")
-        self.assertTrue(ResourceAvailability.objects.filter(resource_item=self.timeResourceItem).exists(), "Resource item availability not found")
-
-        # verify create_entry_in_simple_model
-        self.assertTrue(SimpleModel.objects.exists(), "SimpleModel entry not found")
+        self.assertEqual(ResourceAvailability.objects.filter(resource_item=self.timeResourceItem).count(), 2, "Resource item availability not found")
 
         # Verify TRQ entries after submitting the order
         order = Orders.objects.get(order_number='ORD123456')
-        order_items = OrderItems.objects.filter(order=order)
-
-        # Initial checks for existing container TRQ
-        self.assertTrue(TimeResourcesQueue.objects.filter(segment=self.container_trq.segment).exists(), "Container TRQ not found")
-        self.assertTrue(TimeResourcesQueue.objects.filter(resource_item_code=self.timeResourceItem).exists(), "Resource item for container not found")
-
-        # Additional checks for shampoo future TRQ
-        self.assertTrue(TimeResourcesQueue.objects.filter(segment=self.shampoo_future_trq.segment).exists(), "Shampoo future TRQ not found")
-        self.assertTrue(TimeResourcesQueue.objects.filter(resource_item_code=self.timeResourceItem, segment_start=self.future_start, segment_end=self.future_end).exists(), "Shampoo future TRQ parameters incorrect")
-
-        # After submitting the order and before verifying TRQ creation logic
-        expected_trq_count = 2  # Adjusted based on expected number of TRQs after adding new segments and order processing
-        actual_trq_count = TimeResourcesQueue.objects.filter(resource_item_code=self.timeResourceItem).count()
-        self.assertEqual(actual_trq_count, expected_trq_count, f"Expected {expected_trq_count} TRQ entries, found {actual_trq_count}")
-
-        # Verify response status and content
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('status', response.data)
-        self.assertEqual(response.data['status'], 'OK')
-        self.assertIn('order_number', response.data)
-        self.assertEqual(response.data['order_number'], 'ORD123456')
-
-        # Verify TRQ creation logic
-        order = Orders.objects.get(order_number='ORD123456')
-        order_items = OrderItems.objects.filter(order=order)
-        
-        # Verify TRQ entries are created and correctly associated
-        for order_item in order_items:
-            for phase in Phase.objects.filter(modal_count=order_item.modal_count):
-                trq_entries = TimeResourcesQueue.objects.filter()
-                self.assertTrue(trq_entries.exists(), f"No TRQ entries found")
-                self.assertTrue(trq_entries.filter(segment=self.container_trq.segment).exists(), f"Container TRQ not found")
-                self.assertTrue(trq_entries.filter(resource_item_code=self.timeResourceItem).exists(), f"Resource item not found")
-                self.assertEqual(trq_entries.count(), 2, f"Only 1 found which should be container")

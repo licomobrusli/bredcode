@@ -15,6 +15,7 @@ def update_resource_availability(sender, instance, **kwargs):
     
     # Delete existing ResourceAvailability records for the resource_item_code
     ResourceAvailability.objects.filter(resource_item=instance.resource_item_code).delete()
+    logger.info(f"Deleted ResourceAvailability records for {instance.resource_item_code}")
 
     containers = TimeResourcesQueue.objects.select_for_update().filter(
         resource_item_code=instance.resource_item_code,  # Use the specific resource item code

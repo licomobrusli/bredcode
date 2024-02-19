@@ -26,9 +26,6 @@ def archive_all_time_resource_queue_items():
             )
             # Delete the item from the active table
             item.delete()
-        
-        print(f"Archived {items.count()} items from TimeResourcesQueue.")
-
 
 def start_of_day_process():
     current_date = timezone.now().date()

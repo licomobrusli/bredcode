@@ -1,39 +1,75 @@
 from django.test import TestCase
 from config.submit_order import create_time_resource_queue_entry
-from .models import TimeResourceItems, Segment, ResourceModel, SegmentParam, TimeResourcesQueue, ResourceType
-from datetime import datetime, timedelta
+from .models import TimeResourceItems, Segment, ResourceModel, SegmentParam, ResourceType, ResourceAvailability, TimeResourcesQueue
+from datetime import timedelta
 from django.utils import timezone
+
+import logging
+logger = logging.getLogger(__name__)
+
 
 class TimeResourcesQueueTestCase(TestCase):
     def setUp(self):
-        # Create or fetch a ResourceType instance
-        resource_type, created = ResourceType.objects.get_or_create(
-            code='RT123',  # Use appropriate code for your ResourceType
-            defaults={
-                'name': 'Test Resource Type',
-                'measure': 'Unit',  # Adjust this field based on your model
-                'unit_size': 1,  # Adjust this field based on your model
-            }
+        # Create ResourceType instance
+        resource_type = ResourceType.objects.create(
+            code='T',
+            name='Time resource',
+            measure='minutes',
+            unit_size=1,
         )
 
-        # Now, use the created or fetched ResourceType instance for the ResourceModel
+        # create ResourceModel instance
         self.resource_model = ResourceModel.objects.create(
-            code='RM123',
-            name='Test Resource Model',
-            type=resource_type,  # Use the created or fetched ResourceType instance here
-            cost_per_unit=100,  # Adjust these fields based on your model
-            no_of_units=5,  # Adjust these fields based on your model
+            code='BARB',
+            name='A barber',
+            type=resource_type,
+            cost_per_unit=10,
+            fungible=False,
+            no_of_units=5,
         )
 
-        # The rest of your setup continues as before...
+        # Create TimeResourceItems instance
         self.resource_item = TimeResourceItems.objects.create(
-            resource_item_code='RI12345',
-            name='Test Resource Item',
+            resource_item_code='pmontoya',
+            name='Pablo Montoya',
             description='Test Description',
-            start_date=timezone.now().date(),
             resource_model=self.resource_model
         )
 
+        # Create a SegmentParam instance for container segment
+        self.segment_param_cntn = SegmentParam.objects.create(
+            code='CNTN',
+            name='Test Container Param',
+            description='Description for Test Container Param',
+            container=True,
+            contained=False,
+            available=True,
+            working=True,
+            active=False,
+            paid=True,
+            calc_pay=1,
+            calc_available=1
+        )
+
+        # Use the created SegmentParam instance for the Segment
+        self.segment_cntn = Segment.objects.create(
+            code='CNTN',
+            type='CS',
+            segment_param=self.segment_param_cntn
+        )
+
+        self.segment_start_cntn = timezone.now() - timedelta(hours=1)
+        self.segment_end_cntn = timezone.now() + timedelta(hours=4)
+
+        # Create timeresourcequeue entry for container segment
+        create_time_resource_queue_entry(
+            resource_item_code=self.resource_item.resource_item_code,
+            segment=self.segment_cntn,
+            segment_start=self.segment_start_cntn,
+            segment_end=self.segment_end_cntn,
+            resource_model=self.resource_model,
+            segment_params=self.segment_param_cntn
+        )
 
         # Create a SegmentParam instance before creating a Segment instance
         self.segment_param = SegmentParam.objects.create(
@@ -61,20 +97,50 @@ class TimeResourcesQueueTestCase(TestCase):
         self.segment_end = timezone.now() + timedelta(hours=1)
 
     def test_create_time_resource_queue_entry(self):
+        logger.debug(self.resource_item)
+        
+        # check timeresourcequeue container entry
+        self.assertTrue(TimeResourcesQueue.objects.filter(
+            resource_item_code=self.resource_item.resource_item_code,
+            segment=self.segment_cntn,
+            segment_start=self.segment_start_cntn,
+            segment_end=self.segment_end_cntn,
+            resource_model=self.resource_model
+        ).exists(), "TimeResourcesQueue container should exist.")
+        
+        self.assertEqual(TimeResourcesQueue.objects.count(), 1, "TimeResourcesQueue should have 1 before after adding 2nd.")
+        
+        # Now, check if ResourceAvailability has been updated correctly.
+        availability_before = ResourceAvailability.objects.count()
+        self.assertEqual(availability_before, 1, "ResourceAvailability should be singular before creating TimeResourcesQueue entry.")
+
         # Call the function to create a new TimeResourcesQueue entry
-        new_entry = create_time_resource_queue_entry(
-            resource_item_code=self.resource_item,
+        create_time_resource_queue_entry(
+            resource_item_code=self.resource_item.resource_item_code,
             segment=self.segment,
             segment_start=self.segment_start,
             segment_end=self.segment_end,
             resource_model=self.resource_model,
-            segment_params=None  # Adjust based on your model's needs or provide valid parameters
+            segment_params=self.segment_param
         )
 
-        # Check that the entry was created and contains the correct information
-        self.assertIsNotNone(new_entry.id, "The new TimeResourcesQueue entry should have an ID.")
-        self.assertEqual(new_entry.segment, self.segment, "The segment should match the one provided.")
-        self.assertEqual(new_entry.resource_item_code, self.resource_item, "The resource item code should match the one provided.")
-        self.assertEqual(new_entry.segment_start, self.segment_start, "The segment start time should match the one provided.")
-        self.assertEqual(new_entry.segment_end, self.segment_end, "The segment end time should match the one provided.")
-        self.assertEqual(new_entry.resource_model, self.resource_model, "The resource model should match the one provided.")
+        # check timeresourcequeue entry
+        self.assertTrue(TimeResourcesQueue.objects.filter(
+            resource_item_code=self.resource_item.resource_item_code,
+            segment=self.segment,
+            segment_start=self.segment_start,
+            segment_end=self.segment_end,
+            resource_model=self.resource_model
+        ).exists(), "TimeResourcesQueue entry should exist after creating it.")
+
+        self.assertEqual(TimeResourcesQueue.objects.count(), 2, "TimeResourcesQueue should have 2 entries after adding 2nd.")
+        
+        TRQ = TimeResourcesQueue.objects.filter()
+        logger.debug(TRQ)
+
+        # Now, check if ResourceAvailability has been updated correctly.
+        availability_after = ResourceAvailability.objects.count()
+        self.assertEqual(availability_after, 2, "ResourceAvailability should be updated after creating TimeResourcesQueue entry.")
+
+        RA = ResourceAvailability.objects.filter()
+        logger.debug(RA)

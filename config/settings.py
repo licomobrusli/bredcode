@@ -15,12 +15,9 @@ import logging
 from django.conf import settings
 import os
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
-print("DEBUG Mode:", settings.DEBUG)  # This will print out the debug status
 
 logger = logging.getLogger(__name__)
-logger.debug('SETTINGS.PY')
-
-print("Logging directory:", LOGGING['handlers']['file']['filename'])  # This will print out the path to the debug.log file
+logger.debug('= TRUE')
 
 from pathlib import Path
 import environ
@@ -44,7 +41,6 @@ SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-print("ENV DEBUG:", env('DEBUG'))
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
@@ -149,4 +145,3 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-print("DEBUG Mode END:", settings.DEBUG)
