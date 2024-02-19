@@ -98,9 +98,9 @@ class OrdersList(APIView):
         serializer = OrdersSerializer(orders, many=False)
         return Response(serializer.data)
 
-class OrderCreate(CreateAPIView):
-    queryset = Orders.objects.all()
-    serializer_class = OrdersSerializer
+# class OrderCreate(CreateAPIView):
+#     queryset = Orders.objects.all()
+#     serializer_class = OrdersSerializer
 
 class OrderItemsList(APIView):
     def get(self, request, format=None):
@@ -121,34 +121,34 @@ class OrderItemsList(APIView):
         serializer = OrderItemsSerializer(order_items, many=False)
         return Response(serializer.data)
     
-class OrderItemCreate(CreateAPIView):
-    queryset = OrderItems.objects.all()
-    serializer_class = OrderItemsSerializer
+# class OrderItemCreate(CreateAPIView):
+#     queryset = OrderItems.objects.all()
+#     serializer_class = OrderItemsSerializer
 
 
-@api_view(['POST'])
-def create_order_and_items(request):
-    with transaction.atomic():
-        order_data = request.data.get('order')
+# @api_view(['POST'])
+# def create_order_and_items(request):
+#     with transaction.atomic():
+#         order_data = request.data.get('order')
 
-        # Create an order instance in memory with the received order_number
-        order = Orders(
-            item_count=order_data['item_count'],
-            order_price=order_data['order_price'],
-            order_number=order_data.get('order_number')  # Use the received order number
-        )
-        order.save()
+#         # Create an order instance in memory with the received order_number
+#         order = Orders(
+#             item_count=order_data['item_count'],
+#             order_price=order_data['order_price'],
+#             order_number=order_data.get('order_number')  # Use the received order number
+#         )
+#         order.save()
 
-        for item_data in request.data.get('items', []):
-            modal_count_instance = get_object_or_404(ModalCount, code=item_data['modal_count'])
-            OrderItems.objects.create(
-                order=order,
-                modal_count=modal_count_instance,  # Use the fetched ModalCount instance
-                item_name=item_data['item_name'],
-                unit_price=item_data['unit_price'],
-                item_count=item_data['item_count'],
-                item_price=item_data['item_price'],
-            )
+#         for item_data in request.data.get('items', []):
+#             modal_count_instance = get_object_or_404(ModalCount, code=item_data['modal_count'])
+#             OrderItems.objects.create(
+#                 order=order,
+#                 modal_count=modal_count_instance,  # Use the fetched ModalCount instance
+#                 item_name=item_data['item_name'],
+#                 unit_price=item_data['unit_price'],
+#                 item_count=item_data['item_count'],
+#                 item_price=item_data['item_price'],
+#             )
 
-        # Ensure you return a Response object
-        return Response({'status': 'OK', 'order_number': order.order_number})
+#         # Ensure you return a Response object
+#         return Response({'status': 'OK', 'order_number': order.order_number})
