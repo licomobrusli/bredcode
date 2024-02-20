@@ -2,7 +2,6 @@
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, F
-from django.utils.timezone import now
 from datetime import timedelta
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -11,6 +10,7 @@ from django.utils.timezone import now
 
 import logging
 logger = logging.getLogger(__name__)
+logger.debug(now())
 
 def identify_phases_for_order_item(order_item):
     phases = Phase.objects.filter(modal_count=order_item.modal_count).order_by('sequence')

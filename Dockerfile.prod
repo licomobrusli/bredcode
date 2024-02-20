@@ -1,6 +1,9 @@
 # Builder image
 FROM python:3.8-slim-buster as Builder
 
+# set container timezone to madrid
+ENV TZ=Europe/Madrid
+
 WORKDIR /usr/src/app
 
 ENV PYTHONUNBUFFERED 1

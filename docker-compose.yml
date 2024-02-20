@@ -9,6 +9,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./logs:/home/app/web/logs
     env_file: .env
+    environment:
+      - TZ=Europe/Madrid
   
   web:
     build:
@@ -21,6 +23,7 @@ services:
     env_file: .env
     environment:
       - DEBUG=True
+      - TZ=Europe/Madrid
     volumes:
       - .:/usr/src/app
       - ./logs:/home/app/web/logs

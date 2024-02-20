@@ -2,6 +2,9 @@ FROM python:3.8
 
 CMD ["python", "-m", "debugpy", "--wait-for-client", "--listen", "0.0.0.0:5678", "manage.py", "runserver", "0.0.0.0:8000"]
 
+# set container timezone to madrid
+ENV TZ=Europe/Madrid
+
 # Copy wait-for-it
 COPY wait-for-it.sh /wait-for-it.sh
 RUN chmod +x /wait-for-it.sh
