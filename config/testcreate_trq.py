@@ -2,7 +2,7 @@ from django.test import TestCase
 from config.submit_order import create_time_resource_queue_entry
 from .models import TimeResourceItems, Segment, ResourceModel, SegmentParam, ResourceType, ResourceAvailability, TimeResourcesQueue
 from datetime import timedelta
-from django.utils import timezone
+from django.utils.timezone import now
 
 import logging
 logger = logging.getLogger(__name__)
@@ -28,11 +28,10 @@ class TimeResourcesQueueTestCase(TestCase):
             no_of_units=5,
         )
 
-        # Create TimeResourceItems instance
-        self.resource_item = TimeResourceItems.objects.create(
+        self.timeResourceItem = TimeResourceItems.objects.create(
             resource_item_code='pmontoya',
             name='Pablo Montoya',
-            description='Test Description',
+            description='A test resource item for availability',
             resource_model=self.resource_model
         )
 
@@ -58,12 +57,12 @@ class TimeResourcesQueueTestCase(TestCase):
             segment_param=self.segment_param_cntn
         )
 
-        self.segment_start_cntn = timezone.now() - timedelta(hours=1)
-        self.segment_end_cntn = timezone.now() + timedelta(hours=4)
+        self.segment_start_cntn = now() - timedelta(hours=1)
+        self.segment_end_cntn = now() + timedelta(hours=4)
 
         # Create timeresourcequeue entry for container segment
         create_time_resource_queue_entry(
-            resource_item_code=self.resource_item.resource_item_code,
+            resource_item_code=self.timeResourceItem,
             segment=self.segment_cntn,
             segment_start=self.segment_start_cntn,
             segment_end=self.segment_end_cntn,
@@ -93,15 +92,15 @@ class TimeResourcesQueueTestCase(TestCase):
             segment_param=self.segment_param
         )
 
-        self.segment_start = timezone.now()
-        self.segment_end = timezone.now() + timedelta(hours=1)
+        self.segment_start = now()
+        self.segment_end = now() + timedelta(hours=1)
 
     def test_create_time_resource_queue_entry(self):
-        logger.debug(self.resource_item)
+        logger.debug(self.timeResourceItem)
         
         # check timeresourcequeue container entry
         self.assertTrue(TimeResourcesQueue.objects.filter(
-            resource_item_code=self.resource_item.resource_item_code,
+            resource_item_code=self.timeResourceItem,
             segment=self.segment_cntn,
             segment_start=self.segment_start_cntn,
             segment_end=self.segment_end_cntn,
@@ -116,7 +115,7 @@ class TimeResourcesQueueTestCase(TestCase):
 
         # Call the function to create a new TimeResourcesQueue entry
         create_time_resource_queue_entry(
-            resource_item_code=self.resource_item.resource_item_code,
+            resource_item_code=self.timeResourceItem,
             segment=self.segment,
             segment_start=self.segment_start,
             segment_end=self.segment_end,
@@ -126,7 +125,7 @@ class TimeResourcesQueueTestCase(TestCase):
 
         # check timeresourcequeue entry
         self.assertTrue(TimeResourcesQueue.objects.filter(
-            resource_item_code=self.resource_item.resource_item_code,
+            resource_item_code=self.timeResourceItem,
             segment=self.segment,
             segment_start=self.segment_start,
             segment_end=self.segment_end,

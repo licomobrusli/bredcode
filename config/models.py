@@ -300,7 +300,7 @@ class TimeResourcesQueue(models.Model):
     segment_end = models.DateTimeField()
     date_created = models.DateField(auto_now_add=True)
     resource_model = models.ForeignKey('ResourceModel', on_delete=models.CASCADE)
-    segment_params = models.ForeignKey('SegmentParam', on_delete=models.PROTECT, null=True, blank=True)
+    segment_params = models.ForeignKey('SegmentParam', on_delete=models.PROTECT)
 
     def __str__(self):
         return f"{self.resource_item_code} ({self.segment})"

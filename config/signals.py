@@ -21,18 +21,19 @@ def update_resource_availability(sender, instance, **kwargs):
         resource_item_code=instance.resource_item_code,  # Use the specific resource item code
         segment_params__container=True
     )
+    logger.info(f"Containers found: {containers}")
 
     for container in containers:
         available_periods = [(container.segment_start, container.segment_end)]
 
         overlapping_segments = TimeResourcesQueue.objects.select_for_update().filter(
-            resource_item_code=container.resource_item_code,  # Use the specific resource item code
+            resource_item_code=container.resource_item_code,
             segment_start__lt=container.segment_end,
             segment_end__gt=container.segment_start,
-            segment_params__calc_available=-1
         ).exclude(
             segment_params__container=True
         )
+        logger.info(f"Overlapping segments found: {overlapping_segments}")
 
         for segment in overlapping_segments:
             updated_periods = []
@@ -51,14 +52,16 @@ def update_resource_availability(sender, instance, **kwargs):
                     # The overlapping segment cuts the beginning of the period
                     updated_periods.append((segment.segment_end, end))
             available_periods = updated_periods
+        logger.info(f"Available periods: {available_periods}")
 
         # Update ResourceAvailability Table
         for start, end in available_periods:
             duration = end - start
-            ResourceAvailability.objects.update_or_create(
+            ResourceAvailability.objects.create(
                 resource_item=container.resource_item_code,
                 resource_model=container.resource_model,
                 available_start=start,
                 available_end=end,
-                defaults={'duration': duration}
+                duration=duration
             )
+        logger.info(f"ResourceAvailability records created for {container.resource_item_code}")

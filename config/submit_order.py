@@ -1,14 +1,13 @@
 # submit_order.py
-from django.db import transaction, models
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, F
-from django.db.models.functions import Coalesce
 from django.utils.timezone import now
 from datetime import timedelta
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Orders, OrderItems, ModalCount, Phase, PhaseResource, ResourceAvailability, TimeResourcesQueue, TimeResourceItems
-from django.utils import timezone
+from django.utils.timezone import now
 
 import logging
 logger = logging.getLogger(__name__)
@@ -55,11 +54,12 @@ def find_earliest_availability(resource_model_code, phase_duration, last_phase_e
 
 def create_time_resource_queue_entry(resource_item_code, segment, segment_start, segment_end, resource_model, segment_params=None):
     # Retrieve the TimeResourceItems instance corresponding to the provided resource_item_code
-    resource_item_instance = TimeResourceItems.objects.get(resource_item_code=resource_item_code)
+    logger.debug(f"Resource Item Code: {resource_item_code}")
+    # resource_item_instance = TimeResourceItems.objects.get(resource_item_code=resource_item_code)
 
     # Create a new TimeResourcesQueue instance using the TimeResourceItems instance
     new_queue_entry = TimeResourcesQueue(
-        resource_item_code=resource_item_instance,  # Assign the instance instead of the string
+        resource_item_code=resource_item_code,  # Assign the instance instead of the string
         segment=segment,
         segment_start=segment_start,
         segment_end=segment_end,
@@ -86,6 +86,7 @@ def create_order_and_items(request):
             order_number=order_number
         )
         order.save()
+        logger.debug(f"Order exists: {Orders.objects.all()}")
 
         temp_order_items = []
         for item_data in request.data.get('items', []):
@@ -101,26 +102,33 @@ def create_order_and_items(request):
                 item_price=item_data['item_price'],
             )   
             order_item.save()
+            logger.debug(f"OrderItem exists: {OrderItems.objects.all()}")
+            temp_order_items.append(order_item)
 
-        temp_order_items.sort(key=lambda x: x[0])
-        
-        for _, order_item in temp_order_items:
+        # temp_order_items.sort(key=lambda x: x[0])
+        logger.debug(f"Temp Order Items: {temp_order_items}")
+
+        for order_item in temp_order_items:
             phases = identify_phases_for_order_item(order_item)
             last_phase_end_time = None
+            logger.debug(f"Phases: {phases}")
             for phase in phases:
                 segment = phase.modal_count.code
                 time_resources = identify_resources_for_phase(phase)
+                logger.debug(f"Time Resources: {time_resources}")
                 for resource in time_resources:
                     start_time, end_time, resource_item = find_earliest_availability(resource.resource_models_code.code, phase.duration, last_phase_end_time)
+                    logger.debug(f"Resource: {resource.name}, Start: {start_time}, End: {end_time}, Item: {resource_item}")
                     if start_time and end_time and resource_item:
-                        new_queue_entry = create_time_resource_queue_entry(
+                        create_time_resource_queue_entry(
                             resource_item_code=resource_item,
                             segment=segment,
                             segment_start=start_time,
                             segment_end=end_time,
                             resource_model=resource.resource_models_code,
-                            segment_params=None
+                            segment_params=segment.segment_param
                         )
+                        logger.debug(f"After: {TimeResourcesQueue.objects.all()}")
                         last_phase_end_time = end_time
                         break
                     else:
