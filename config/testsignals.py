@@ -1,11 +1,9 @@
 # tests.py
 from django.test import TestCase
-from .models import (
-    TimeResourcesQueue, ResourceModel, ModalCount, Segment, SegmentParam, ResourceType, 
-    ResourceAvailability, TimeResourceItems, ServiceCategory, Services
-)
-from django.utils import timezone
+from .models import (TimeResourcesQueue, ResourceModel, ModalCount, Segment, SegmentParam, ResourceType, ResourceAvailability, TimeResourceItems, ServiceCategory, Services)
 from datetime import timedelta
+from prettytable import PrettyTable
+from config.time_utils import now_minutes
 
 class TimeResourcesQueueSignalTest(TestCase):
     def setUp(self):
@@ -19,7 +17,7 @@ class TimeResourcesQueueSignalTest(TestCase):
 
         # Create ResourceModel instance
         resource_model = ResourceModel.objects.create(
-            code='RM123',
+            code='BARB',
             name='Test Resource Model',
             cost_per_unit=10.0,
             no_of_units=5,
@@ -42,15 +40,15 @@ class TimeResourcesQueueSignalTest(TestCase):
         )
 
         # Define the start and end times for container and lunch segments
-        today = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today = now_minutes().replace(hour=0, minute=0, second=0, microsecond=0)
         container_start = today.replace(hour=10)
         container_end = today.replace(hour=22)
 
          # Create TimeResourceItems instance
         self.time_resource_item = TimeResourceItems.objects.create(
-            resource_item_code='RIC12',
-            name='Test Resource Item',
-            description='This is a test resource item',
+            resource_item_code='pmontoya',
+            name='Pablo Montoya',
+            description='This is Pablo he is a barber',
             start_date=today.date(),
             resource_model=resource_model,
         )
@@ -99,6 +97,7 @@ class TimeResourcesQueueSignalTest(TestCase):
         )
 
     def test_post_delete_signal(self):
+        today = now_minutes().replace(hour=0, minute=0, second=0, microsecond=0)
         # Check the initial state before adding lunch
         remaining_trqs = TimeResourcesQueue.objects.all()
         self.assertEqual(remaining_trqs.count(), 1)
@@ -109,8 +108,8 @@ class TimeResourcesQueueSignalTest(TestCase):
         self.assertEqual(availability_segments.count(), 1)
 
         # Create lunch TimeResourcesQueue instance using non_container_segment_param
-        lunch_start = timezone.now().replace(hour=15)
-        lunch_end = timezone.now().replace(hour=16)
+        lunch_start = now_minutes().replace(hour=15, minute=0)
+        lunch_end = now_minutes().replace(hour=16, minute=0)
         lunch_segment = Segment.objects.create(
             code='LNCH',  # A unique code for the lunch segment
             type='Break',  # Assuming 'Break' is a valid type for this example
@@ -130,22 +129,77 @@ class TimeResourcesQueueSignalTest(TestCase):
         remaining_trqs = TimeResourcesQueue.objects.all()
         self.assertEqual(remaining_trqs.count(), 2)
 
-        # Again, use the TimeResourceItems instance for filtering ResourceAvailability
-        availability_segments = ResourceAvailability.objects.filter(resource_item=self.time_resource_item).order_by('available_start')
-        self.assertEqual(availability_segments.count(), 2)
+        # create task TimeResourcesQueue instance using non_container_segment_param
+        task_start = now_minutes().replace(hour=16, minute=30)
+        task_end = now_minutes().replace(hour=17, minute=0)
+        self.task_segment = Segment.objects.create(
+            code='TST',  # A unique code for the task segment
+            type='Task',  # Assuming 'Task' is a valid type for this example
+            segment_param=self.non_container_segment_param
+        )
 
-        # Delete the lunch segment
-        lunch_trq.delete()
+        TimeResourcesQueue.objects.create(
+            resource_item_code=self.time_resource_item,
+            segment=self.task_segment,  # Use the newly created Segment instance
+            segment_start=task_start,
+            segment_end=task_end,
+            resource_model=self.container_trq.resource_model,
+            segment_params=self.non_container_segment_param
+        )
 
-        # Check the state after deleting lunch
+        # Create second task TimeResourcesQueue instance immediately following the first
+        task_trq2_start = task_end
+        task_trq2_end = task_end + timedelta(minutes=10)
+        TimeResourcesQueue.objects.create(
+            resource_item_code=self.time_resource_item,
+            segment=self.task_segment,  # Reusing the same segment type for simplicity
+            segment_start=task_trq2_start,
+            segment_end=task_trq2_end,
+            resource_model=self.container_trq.resource_model,
+            segment_params=self.non_container_segment_param
+        )
+
+        # Assert the state after adding back-to-back task segments
         remaining_trqs = TimeResourcesQueue.objects.all()
-        self.assertEqual(remaining_trqs.count(), 1)
+        self.assertEqual(remaining_trqs.count(), 4)  # Expecting 4 TRQs: container, lunch, task1, task2
 
-        # Again, use the TimeResourceItems instance for filtering ResourceAvailability
+        # here i need to see everything that is in the time resource queue in a pretty table
+        trqs = TimeResourcesQueue.objects.all()
+        table = PrettyTable()
+        table.field_names = ["Resource Item", "Segment", "Start", "End"]
+        for trq in trqs:
+            table.add_row([trq.resource_item_code, trq.segment, trq.segment_start, trq.segment_end])
+        print(table)
+
+        # here i need to see everything that is in the resource availability in a pretty table
         availability_segments = ResourceAvailability.objects.filter(resource_item=self.time_resource_item).order_by('available_start')
-        self.assertEqual(availability_segments.count(), 1)
+        table = PrettyTable()
+        table.field_names = ["Start", "End"]
+        for segment in availability_segments:
+            table.add_row([segment.available_start, segment.available_end])
+        print(table)
 
-        # Verify the time ranges of the availability segments
-        first_availability = availability_segments.first()
-        self.assertEqual(first_availability.available_start, self.container_trq.segment_start)
-        self.assertEqual(first_availability.available_end, self.container_trq.segment_end)
+       # Corrected Assertions for TimeResourcesQueue
+        expected_trqs = [
+            ('pmontoya', 'SHFT - SC', today.strftime('%Y-%m-%d') + ' 10:00:00+0000', today.strftime('%Y-%m-%d') + ' 22:00:00+0000'),
+            ('pmontoya', 'LNCH - Break', today.strftime('%Y-%m-%d') + ' 15:00:00+0000', today.strftime('%Y-%m-%d') + ' 16:00:00+0000'),
+            ('pmontoya', 'TST - Task', today.strftime('%Y-%m-%d') + ' 16:30:00+0000', today.strftime('%Y-%m-%d') + ' 17:00:00+0000'),
+            ('pmontoya', 'TST - Task', today.strftime('%Y-%m-%d') + ' 17:00:00+0000', today.strftime('%Y-%m-%d') + ' 17:10:00+0000')
+        ]
+
+        for trq, (code, seg, start, end) in zip(TimeResourcesQueue.objects.order_by('segment_start'), expected_trqs):
+            self.assertEqual(trq.resource_item_code.resource_item_code, code)
+            self.assertEqual(f'{trq.segment.code} - {trq.segment.type}', seg)
+            self.assertEqual(trq.segment_start.strftime("%Y-%m-%d %H:%M:%S%z"), start)
+            self.assertEqual(trq.segment_end.strftime("%Y-%m-%d %H:%M:%S%z"), end)
+
+        # Assertions for ResourceAvailability
+        expected_availability = [
+            (today.strftime('%Y-%m-%d') + ' 10:00:00+0000', today.strftime('%Y-%m-%d') + ' 15:00:00+0000'),
+            (today.strftime('%Y-%m-%d') + ' 16:00:00+0000', today.strftime('%Y-%m-%d') + ' 16:30:00+0000'),
+            (today.strftime('%Y-%m-%d') + ' 17:10:00+0000', today.strftime('%Y-%m-%d') + ' 22:00:00+0000')
+        ]
+
+        for availability, (start, end) in zip(ResourceAvailability.objects.filter(resource_item=self.time_resource_item).order_by('available_start'), expected_availability):
+            self.assertEqual(availability.available_start.strftime('%Y-%m-%d %H:%M:%S%z'), start)
+            self.assertEqual(availability.available_end.strftime('%Y-%m-%d %H:%M:%S%z'), end)

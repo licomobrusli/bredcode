@@ -125,6 +125,9 @@ class Orders(models.Model):
     date_created = models.DateField(auto_now_add=True)
     order_number = models.CharField(max_length=20, unique=True)
 
+    def __str__(self):
+        return self.order_number
+
     def save(self, *args, **kwargs):
         creating = not self.id  # Check if the object is being created
         now = timezone.now()
@@ -301,6 +304,8 @@ class TimeResourcesQueue(models.Model):
     date_created = models.DateField(auto_now_add=True)
     resource_model = models.ForeignKey('ResourceModel', on_delete=models.CASCADE)
     segment_params = models.ForeignKey('SegmentParam', on_delete=models.PROTECT)
+    order_number = models.ForeignKey(Orders, on_delete=models.PROTECT, null=True, blank=True, to_field='order_number')
+
 
     def __str__(self):
         return f"{self.resource_item_code} ({self.segment})"
@@ -320,7 +325,8 @@ class TimeResourcesQueueHistory(models.Model):
     resource_model = models.ForeignKey(ResourceModel, on_delete=models.CASCADE)
     segment_params = models.ForeignKey('SegmentParam', on_delete=models.PROTECT, null=True, blank=True)
     archived_date = models.DateTimeField(auto_now_add=True)  # Date when the record was archived
-
+    order_number = models.ForeignKey(Orders, on_delete=models.PROTECT, null=True, blank=True, to_field='order_number')
+    
     def __str__(self):
         return f"{self.resource_item_code} ({self.segment}) - Archived"
 

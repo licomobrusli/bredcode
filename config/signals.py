@@ -3,6 +3,8 @@ from django.dispatch import receiver
 from django.db import transaction
 from .models import TimeResourcesQueue, ResourceAvailability
 import logging
+from prettytable import PrettyTable
+from config.time_utils import now_minutes
 
 # Create a logger instance
 logger = logging.getLogger(__name__)
@@ -11,57 +13,58 @@ logger = logging.getLogger(__name__)
 @receiver(post_delete, sender=TimeResourcesQueue)
 @transaction.atomic
 def update_resource_availability(sender, instance, **kwargs):
-    logger.info(f"Signal received for {sender.__name__} with instance {instance.pk}")
-    
     # Delete existing ResourceAvailability records for the resource_item_code
     ResourceAvailability.objects.filter(resource_item=instance.resource_item_code).delete()
-    logger.info(f"Deleted ResourceAvailability records for {instance.resource_item_code}")
+    logger.info(f"Deleted ResourceAvailability for {instance.resource_item_code}")
 
-    containers = TimeResourcesQueue.objects.select_for_update().filter(
-        resource_item_code=instance.resource_item_code,  # Use the specific resource item code
+    # Fetch all container segments for the resource item
+    containers = TimeResourcesQueue.objects.filter(
+        resource_item_code=instance.resource_item_code,
         segment_params__container=True
-    )
-    logger.info(f"Containers found: {containers}")
+    ).order_by('segment_start')
 
+    # Initialize a list to keep track of non-overlapping available periods
+    available_periods = []
+
+    # Iterate through each container to find and calculate its available periods
     for container in containers:
-        available_periods = [(container.segment_start, container.segment_end)]
+        # Start with the container's own time as the initial available period
+        period_start = container.segment_start
+        period_end = container.segment_end
 
-        overlapping_segments = TimeResourcesQueue.objects.select_for_update().filter(
+        # Get all overlapping segments excluding other containers
+        overlapping_segments = TimeResourcesQueue.objects.filter(
             resource_item_code=container.resource_item_code,
-            segment_start__lt=container.segment_end,
             segment_end__gt=container.segment_start,
+            segment_start__lt=container.segment_end
         ).exclude(
             segment_params__container=True
-        )
-        logger.info(f"Overlapping segments found: {overlapping_segments}")
+        ).order_by('segment_start')
 
+        # Split the container's time into available periods around the overlapping segments
         for segment in overlapping_segments:
-            updated_periods = []
-            for start, end in available_periods:
-                if segment.segment_start <= start and segment.segment_end >= end:
-                    # The overlapping segment completely covers the period
-                    continue
-                if segment.segment_start > start and segment.segment_end < end:
-                    # The overlapping segment splits the period into two
-                    updated_periods.append((start, segment.segment_start))
-                    updated_periods.append((segment.segment_end, end))
-                elif segment.segment_start > start:
-                    # The overlapping segment cuts the end of the period
-                    updated_periods.append((start, segment.segment_start))
-                elif segment.segment_end < end:
-                    # The overlapping segment cuts the beginning of the period
-                    updated_periods.append((segment.segment_end, end))
-            available_periods = updated_periods
-        logger.info(f"Available periods: {available_periods}")
+            # If the overlapping segment starts after the current period start,
+            # then we have found an available period before the overlap occurs.
+            if segment.segment_start > period_start:
+                available_periods.append((period_start, segment.segment_start))
 
-        # Update ResourceAvailability Table
-        for start, end in available_periods:
-            duration = end - start
-            ResourceAvailability.objects.create(
-                resource_item=container.resource_item_code,
-                resource_model=container.resource_model,
-                available_start=start,
-                available_end=end,
-                duration=duration
-            )
-        logger.info(f"ResourceAvailability records created for {container.resource_item_code}")
+            # Update period_start to the end of the overlapping segment,
+            # effectively 'removing' the overlap from the available time.
+            period_start = max(period_start, segment.segment_end)
+
+        # After processing all overlapping segments, if the last segment's end
+        # is before the container's end, add the remaining time as available.
+        if period_start < period_end:
+            available_periods.append((period_start, period_end))
+
+    # Update ResourceAvailability Table based on calculated available periods
+    for start, end in available_periods:
+        duration = end - start  # Calculate the duration based on updated start and end times
+        ResourceAvailability.objects.create(
+            resource_item=instance.resource_item_code,
+            resource_model=container.resource_model,
+            available_start=start,
+            available_end=end,
+            duration=duration
+        )
+        logger.info(f"ResourceAvailability record created: Start {start}, End {end}, for {instance.resource_item_code}")
