@@ -10,6 +10,7 @@ djangorestframework = "*"
 psycopg2-binary = "*"
 gunicorn = "*"
 django-extensions = "*"
+prettytable= "==3.10.0"
 
 [dev-packages]
 

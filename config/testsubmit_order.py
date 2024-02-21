@@ -5,7 +5,8 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from .models import ServiceCategory, Services, ModalCount, Orders, OrderItems, Phase, PhaseResource, ResourceType, ResourceModel, Segment, SegmentParam, ResourceAvailability, TimeResourceItems, TimeResourcesQueue
 from django.utils.timezone import now
-
+from prettytable import PrettyTable
+from config.time_utils import now_minutes
 
 import logging
 logger = logging.getLogger(__name__)
@@ -116,9 +117,9 @@ class OrderAPITests(TestCase):
             resource_model=self.resource_model_barber
         )
 
-        container_start = now() - timedelta(hours=1)
-        container_end = now() + timedelta(hours=2)
-        container_start2 = now() + timedelta(minutes=10)
+        container_start = now_minutes() - timedelta(hours=1)
+        container_end = now_minutes() + timedelta(hours=2)
+        container_start2 = now_minutes() + timedelta(minutes=10)
 
         self.container_trq_cher1 = TimeResourcesQueue.objects.create(
             resource_item_code=self.timeResourceItem_cher1,
@@ -147,8 +148,8 @@ class OrderAPITests(TestCase):
             segment_params=segment_param_containers
         )
 
-        lunch_start = now() + timedelta(hours=1)
-        lunch_end = now() + timedelta(hours=1, minutes=10)
+        lunch_start = now_minutes() + timedelta(hours=1)
+        lunch_end = now_minutes() + timedelta(hours=1, minutes=10)
 
         self.lunch_trq_pmontoya = TimeResourcesQueue.objects.create(
             resource_item_code=self.timeResourceItem_pmontoya,
@@ -433,10 +434,43 @@ class OrderAPITests(TestCase):
         )
 
 
+    def display_time_resources_queue(self):
+        trqs = TimeResourcesQueue.objects.all().order_by('resource_item_code', 'segment_start')
+        table = PrettyTable()
+        table.field_names = ["Resource Item Code", "Segment", "Start Time", "End Time", "Resource Model"]
+        for trq in trqs:
+            table.add_row([trq.resource_item_code, trq.segment, trq.segment_start, trq.segment_end, trq.resource_model])
+        print("Time Resources Queue Table:")
+        print(table)
+
+    def display_resource_availability(self):
+        resource_availabilities = ResourceAvailability.objects.all().order_by('resource_item', 'available_start')
+        table = PrettyTable()
+        table.field_names = ["Resource Item", "Resource Model", "Available Start", "Available End", "Duration"]
+        for ra in resource_availabilities:
+            table.add_row([ra.resource_item, ra.resource_model, ra.available_start, ra.available_end, ra.duration])
+        print("Resource Availability Table:")
+        print(table)
+
     def test_create_order_and_order_items(self):
         # Arrange
+
+        self.assertEqual(Orders.objects.count(), 0, "Orders should have 0 after setup.")
+        self.assertEqual(OrderItems.objects.count(), 0, "OrderItems should have 0 after setup.")
+        self.assertEqual(TimeResourcesQueue.objects.filter(resource_item_code=self.timeResourceItem_pmontoya).count(), 2, "2 trq for pmontoya 1 container 1 lunch")
+        self.assertEqual(TimeResourcesQueue.objects.filter(resource_item_code=self.timeResourceItem_jdoe).count(), 2, "2 trq for jdoe 1 container 1 lunch")
+        self.assertEqual(TimeResourcesQueue.objects.filter(resource_item_code=self.timeResourceItem_cher1).count(), 1, "1 trq for chair")
+        self.assertEqual(TimeResourcesQueue.objects.count(), 5, "TimeResourcesQueue should have 5 after setup.")
+
+        self.assertEqual(ResourceAvailability.objects.filter(resource_model=self.resource_model_barber).count(), 4, "4 ResourceAvailability for barber")
+        self.assertEqual(ResourceAvailability.objects.filter(resource_item=self.timeResourceItem_pmontoya).count(), 2, "2 ResourceAvailability for pmontoya")
+        self.assertEqual(ResourceAvailability.objects.filter(resource_item=self.timeResourceItem_jdoe).count(), 2, "2 ResourceAvailability for jdoe")
+        self.assertEqual(ResourceAvailability.objects.filter(resource_model=self.resource_model_chair).count(), 1, "1 ResourceAvailability for chair")
+        self.assertEqual(ResourceAvailability.objects.filter(resource_item=self.timeResourceItem_cher1).count(), 1, "1 ResourceAvailability for cher1")
+        self.assertEqual(ResourceAvailability.objects.count(), 5, "ResourceAvailability should have 5 after setup.")
+                         
         url = '/api/submit_order/'
-        order_data = {
+        first_order_data = {
             'order': {
                 'item_count': 3,  # Updated to reflect the total number of service items
                 'order_price': 70.00,  # Updated total order price, adjust based on actual prices
@@ -445,7 +479,7 @@ class OrderAPITests(TestCase):
             'items': [
                 {
                     'modal_count': self.segment_task_wash.code,
-                    'item_name': 'Shampoo',
+                    'item_name': 'wash hair',
                     'unit_price': 10,
                     'item_count': 1,
                     'item_price': 10,
@@ -466,6 +500,11 @@ class OrderAPITests(TestCase):
                 }
             ]
         }
+
+        # Submit the first order
+        first_response = self.client.post(url, first_order_data, format='json')
+        self.assertEqual(first_response.status_code, status.HTTP_201_CREATED)
+
         # Second order - Same as the first with different order number
         second_order_data = {
             'order': {
@@ -476,7 +515,7 @@ class OrderAPITests(TestCase):
             'items': [
                 {
                     'modal_count': self.segment_task_wash.code,
-                    'item_name': 'Shampoo',
+                    'item_name': 'Wash hair',
                     'unit_price': 10,
                     'item_count': 1,
                     'item_price': 10,
@@ -499,7 +538,8 @@ class OrderAPITests(TestCase):
         }
 
         # Submit the second order
-        self.client.post(url, second_order_data, format='json')
+        second_response = self.client.post(url, second_order_data, format='json')
+        self.assertEqual(second_response.status_code, status.HTTP_201_CREATED)
 
         # Third order - Only includes a haircut
         third_order_data = {
@@ -520,7 +560,73 @@ class OrderAPITests(TestCase):
         }
 
         # Submit the third order
-        self.client.post(url, third_order_data, format='json')
+        third_response = self.client.post(url, third_order_data, format='json')
+        self.assertEqual(third_response.status_code, status.HTTP_201_CREATED)
+
+        # output the pretty tables for the TimeResourcesQueue and ResourceAvailability
+        self.display_time_resources_queue()
+        self.display_resource_availability()
+
+        # log all trq instances
+        logger.debug(TimeResourcesQueue.objects.all())
+        # log all resource availability instances
+        logger.debug(ResourceAvailability.objects.all())
+
+        # # Assert
+        # self.assertEqual(Orders.objects.count(), 3, "Orders should have 3 after adding 3.")
+        # self.assertEqual(OrderItems.objects.count(), 7, "OrderItems should have 7 after adding 7.")
+        # self.assertEqual(TimeResourcesQueue.objects.count(), 15, "TimeResourcesQueue should have 15 after adding 15.")
+        # self.assertEqual(TimeResourcesQueue.objects.filter(
+        #     resource_item_code=self.timeResourceItem_pmontoya,
+        #     segment=self.segment_task_wash,
+        #     resource_model=self.resource_model_barber
+        # ).count(), 3, "TimeResourcesQueue should have 3 for Pablo Montoya after adding 3.")
+        # self.assertEqual(TimeResourcesQueue.objects.filter(
+        #     resource_item_code=self.timeResourceItem_jdoe,
+        #     segment=self.segment_task_wash,
+        #     resource_model=self.resource_model_barber
+        # ).count(), 3, "TimeResourcesQueue should have 3 for John Doe after adding 3.")
+        # self.assertEqual(TimeResourcesQueue.objects.filter(
+        #     resource_item_code=self.timeResourceItem_pmontoya,
+        #     segment=self.segment_task_cut,
+        #     resource_model=self.resource_model_barber
+        # ).count(), 3, "TimeResourcesQueue should have 3 for Pablo Montoya after adding 3.")
+        # self.assertEqual(TimeResourcesQueue.objects.filter(
+        #     resource_item_code=self.timeResourceItem_jdoe,
+        #     segment=self.segment_task_cut,
+        #     resource_model=self.resource_model_barber
+        # ).count(), 3, "TimeResourcesQueue should have 3 for John Doe after adding 3.")
+        # self.assertEqual(TimeResourcesQueue.objects.filter(
+        #     resource_item_code=self.timeResourceItem_pmontoya,
+        #     segment=self.segment_task_color,
+        #     resource_model=self.resource_model_barber
+        # ).count(), 3, "TimeResourcesQueue should have 3 for Pablo Montoya after adding 3.")
+        # self.assertEqual(TimeResourcesQueue.objects.filter(
+        #     resource_item_code=self.timeResourceItem_jdoe,
+        #     segment=self.segment_task_color,
+        #     resource_model=self.resource_model_barber
+        # ).count(), 3, "TimeResourcesQueue should have 3 for John Doe after adding 3.")
+        # self.assertEqual(TimeResourcesQueue.objects.filter(
+        #     resource_item_code=self.timeResourceItem_cher1,
+        #     segment=self.segment_task_color,
+        #     resource_model=self.resource_model_chair
+        # ).count(), 3, "TimeResourcesQueue should have 3 for chair after adding 3.")
+        # self.assertEqual(TimeResourcesQueue.objects.filter(
+        #     resource_item_code=self.timeResourceItem_cher1,
+        #     segment=self.segment_task_wash,
+        #     resource_model=self.resource_model_chair
+        # ).count(), 3, "TimeResourcesQueue should have 3 for chair after adding 3.")
+        # self.assertEqual(TimeResourcesQueue.objects.filter(
+        #     resource_item_code=self.timeResourceItem_cher1,
+        #     segment=self.segment_task_cut,
+        #     resource_model=self.resource_model_chair
+        # ).count(), 3, "TimeResourcesQueue should have 3 for chair after adding 3.")
+        # self.assertEqual(TimeResourcesQueue.objects.filter(
+        #     resource_item_code=self.timeResourceItem_cher1,
+        #     segment=self.segment_task_color,
+        #     resource_model=self.resource_model_chair
+        # ).count(), 3, "TimeResourcesQueue should have 3 for chair after adding 3.")
+        
 
 
          

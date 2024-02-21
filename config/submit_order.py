@@ -7,10 +7,12 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Orders, OrderItems, ModalCount, Phase, PhaseResource, ResourceAvailability, TimeResourcesQueue, TimeResourceItems
 from django.utils.timezone import now
+from rest_framework import status
+from config.time_utils import now_minutes
 
 import logging
 logger = logging.getLogger(__name__)
-logger.debug(now())
+logger.debug(now_minutes())
 
 def identify_phases_for_order_item(order_item):
     phases = Phase.objects.filter(modal_count=order_item.modal_count).order_by('sequence')
@@ -27,7 +29,7 @@ def identify_resources_for_phase(phase):
 
 
 def find_earliest_availability(resource_model_code, phase_duration, last_phase_end_time=None):
-    initial_start_time = now().replace(microsecond=0)
+    initial_start_time = now_minutes().replace(microsecond=0)
     if last_phase_end_time:
         initial_start_time = max(initial_start_time, last_phase_end_time)
 
@@ -134,4 +136,4 @@ def create_order_and_items(request):
                     else:
                         logger.error(f"No available resource found for phase {phase.name} of item {order_item.item_name}")
 
-        return Response({'status': 'OK', 'order_number': order.order_number})
+        return Response({'status': 'OK', 'order_number': order.order_number}, status=status.HTTP_201_CREATED)
