@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from config.models import Services, ServiceCategory, ModalCount, ModalSelect, Orders, OrderItems
+from config.models import Services, ServiceCategory, ModalCount, ModalSelect, Orders, OrderItems, TimeResourcesQueue
+import logging
 
 class ServiceCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -32,3 +33,38 @@ class OrderItemsSerializer(serializers.ModelSerializer):
         model = OrderItems
         fields = ['id', 'order', 'modal_count', 'item_name', 'unit_price', 'item_count', 'item_price', 'est_start', 'est_duration', 'start', 'duration', 'time_created', 'date_created', 'order_number']
         read_only_fields = ['id', 'time_created', 'date_created']
+
+class TimeResourcesQueueSerializer(serializers.ModelSerializer):
+    resource_item_name = serializers.SerializerMethodField()
+    segment_name = serializers.SerializerMethodField()
+    resource_model_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TimeResourcesQueue
+        fields = [
+            'resource_item_code',
+            'resource_item_name',
+            'segment',
+            'segment_name',
+            'segment_start',
+            'segment_end',
+            'date_created',
+            'resource_model',
+            'resource_model_name',
+            'segment_params',
+            'order_number'
+        ]
+
+    def get_resource_item_name(self, obj):
+        return obj.resource_item_code.name if obj.resource_item_code else None
+
+    def get_segment_name(self, obj):
+        if obj.segment and hasattr(obj.segment, 'modal_count'):
+            logging.debug(f"Segment Name: {obj.segment.modal_count.name}")
+            return obj.segment.modal_count.name
+        else:
+            logging.debug("Segment or ModalCount missing")
+            return None
+
+    def get_resource_model_name(self, obj):
+        return obj.resource_model.name if obj.resource_model else None

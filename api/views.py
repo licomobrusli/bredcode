@@ -7,8 +7,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from config.models import ServiceCategory, Services, ModalCount, ModalSelect, Orders, OrderItems
-from .serializers import  ServiceCategorySerializer, ServicesSerializer, ModalCountSerializer, ModalSelectSerializer, OrdersSerializer, OrderItemsSerializer
+from rest_framework import viewsets
+from config.models import ServiceCategory, Services, ModalCount, ModalSelect, Orders, OrderItems, TimeResourcesQueue
+from .serializers import  ServiceCategorySerializer, ServicesSerializer, ModalCountSerializer, ModalSelectSerializer, OrdersSerializer, OrderItemsSerializer, TimeResourcesQueueSerializer
 import logging
 
 class ServiceCategoryList(APIView):
@@ -121,34 +122,6 @@ class OrderItemsList(APIView):
         serializer = OrderItemsSerializer(order_items, many=False)
         return Response(serializer.data)
     
-# class OrderItemCreate(CreateAPIView):
-#     queryset = OrderItems.objects.all()
-#     serializer_class = OrderItemsSerializer
-
-
-# @api_view(['POST'])
-# def create_order_and_items(request):
-#     with transaction.atomic():
-#         order_data = request.data.get('order')
-
-#         # Create an order instance in memory with the received order_number
-#         order = Orders(
-#             item_count=order_data['item_count'],
-#             order_price=order_data['order_price'],
-#             order_number=order_data.get('order_number')  # Use the received order number
-#         )
-#         order.save()
-
-#         for item_data in request.data.get('items', []):
-#             modal_count_instance = get_object_or_404(ModalCount, code=item_data['modal_count'])
-#             OrderItems.objects.create(
-#                 order=order,
-#                 modal_count=modal_count_instance,  # Use the fetched ModalCount instance
-#                 item_name=item_data['item_name'],
-#                 unit_price=item_data['unit_price'],
-#                 item_count=item_data['item_count'],
-#                 item_price=item_data['item_price'],
-#             )
-
-#         # Ensure you return a Response object
-#         return Response({'status': 'OK', 'order_number': order.order_number})
+class TimeResourcesQueueViewSet(viewsets.ModelViewSet):
+    queryset = TimeResourcesQueue.objects.all()
+    serializer_class = TimeResourcesQueueSerializer
