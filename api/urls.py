@@ -10,6 +10,7 @@ from .views import (
     OrdersList,
     OrderItemsList,
     TimeResourcesQueueViewSet,
+    RegisterEmployeeView,
 )
 
 router = routers.DefaultRouter()
@@ -24,4 +25,5 @@ urlpatterns = [
     path('order_items/', OrderItemsList.as_view(), name='order_items_list'),
     path('submit_order/', create_order_and_items, name='submit_order'),
     path('', include(router.urls)),
+    path('register/', RegisterEmployeeView.as_view(), name='register_employee'),
 ]

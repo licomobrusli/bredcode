@@ -1,5 +1,6 @@
 # views.py
 from django.db import transaction
+from django.views import View
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.generics import CreateAPIView
@@ -8,7 +9,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import viewsets
-from config.models import ServiceCategory, Services, ModalCount, ModalSelect, Orders, OrderItems, TimeResourcesQueue
+from django.http import JsonResponse
+from django.contrib.auth.models import Group
+from forms.register_user import EmployeeRegistrationForm
+from config.models import Employee
+from config.models import ServiceCategory, Services, ModalCount, ModalSelect, Orders, OrderItems, TimeResourcesQueue, Employee
 from .serializers import  ServiceCategorySerializer, ServicesSerializer, ModalCountSerializer, ModalSelectSerializer, OrdersSerializer, OrderItemsSerializer, TimeResourcesQueueSerializer
 import logging
 
@@ -125,3 +130,28 @@ class OrderItemsList(APIView):
 class TimeResourcesQueueViewSet(viewsets.ModelViewSet):
     queryset = TimeResourcesQueue.objects.all()
     serializer_class = TimeResourcesQueueSerializer
+
+class RegisterEmployeeView(View):
+    def post(self, request, *args, **kwargs):
+        form = EmployeeRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()  # Saves the User instance
+            employee = Employee.objects.get(resource_item=form.cleaned_data['username'])
+            user.first_name = employee.name
+            user.last_name = employee.surname
+            user.email = employee.email
+            user.save()
+
+            # Assign user to a group based on their role
+            group_name = employee.resource_model  # Assuming this matches your Group name
+            group, created = Group.objects.get_or_create(name=group_name)
+            user.groups.add(group)
+
+            # Instead of redirecting, return a success response
+            return JsonResponse({'status': 'success', 'user_id': user.id})
+        else:
+            return JsonResponse({'status': 'error', 'errors': form.errors})
+    
+    def get(self, request, *args, **kwargs):
+        # Handle GET request if necessary, otherwise just return an error
+        return JsonResponse({'status': 'error', 'message': 'Only POST requests are accepted'})
