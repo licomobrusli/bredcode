@@ -3,18 +3,16 @@ from django.db import transaction
 from django.views import View
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
-from rest_framework.generics import CreateAPIView
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.views import APIView
+from django.http import JsonResponse
 from rest_framework.response import Response
 from rest_framework import viewsets
-from django.http import JsonResponse
 from django.contrib.auth.models import Group
 from forms.register_user import EmployeeRegistrationForm
-from config.models import Employee
 from config.models import ServiceCategory, Services, ModalCount, ModalSelect, Orders, OrderItems, TimeResourcesQueue, Employee
 from .serializers import  ServiceCategorySerializer, ServicesSerializer, ModalCountSerializer, ModalSelectSerializer, OrdersSerializer, OrderItemsSerializer, TimeResourcesQueueSerializer
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 import logging
 
 class ServiceCategoryList(APIView):
@@ -131,9 +129,11 @@ class TimeResourcesQueueViewSet(viewsets.ModelViewSet):
     queryset = TimeResourcesQueue.objects.all()
     serializer_class = TimeResourcesQueueSerializer
 
-class RegisterEmployeeView(View):
+@method_decorator(csrf_exempt, name='dispatch')
+class RegisterEmployeeView(APIView):
     def post(self, request, *args, **kwargs):
-        form = EmployeeRegistrationForm(request.POST)
+        logging.info("Received registration request with data: {}".format(request.data))
+        form = EmployeeRegistrationForm(request.data)  # Use request.data instead of request.POST for JSON data
         if form.is_valid():
             user = form.save()  # Saves the User instance
             employee = Employee.objects.get(resource_item=form.cleaned_data['username'])
@@ -147,9 +147,10 @@ class RegisterEmployeeView(View):
             group, created = Group.objects.get_or_create(name=group_name)
             user.groups.add(group)
 
-            # Instead of redirecting, return a success response
+            logging.info("User registration successful for: {}".format(user.username))
             return JsonResponse({'status': 'success', 'user_id': user.id})
         else:
+            logging.error("Registration form invalid: {}".format(form.errors))
             return JsonResponse({'status': 'error', 'errors': form.errors})
     
     def get(self, request, *args, **kwargs):
