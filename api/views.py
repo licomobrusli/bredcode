@@ -1,6 +1,4 @@
 # views.py
-from django.db import transaction
-from django.views import View
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -8,11 +6,14 @@ from django.http import JsonResponse
 from rest_framework.response import Response
 from rest_framework import viewsets
 from django.contrib.auth.models import Group
+from django.contrib.auth import authenticate, login, logout
+from rest_framework.authtoken.models import Token
 from forms.register_user import EmployeeRegistrationForm
 from config.models import ServiceCategory, Services, ModalCount, ModalSelect, Orders, OrderItems, TimeResourcesQueue, Employee
 from .serializers import  ServiceCategorySerializer, ServicesSerializer, ModalCountSerializer, ModalSelectSerializer, OrdersSerializer, OrderItemsSerializer, TimeResourcesQueueSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from rest_framework.permissions import IsAuthenticated
 import logging
 
 class ServiceCategoryList(APIView):
@@ -124,10 +125,6 @@ class OrderItemsList(APIView):
 
         serializer = OrderItemsSerializer(order_items, many=False)
         return Response(serializer.data)
-    
-class TimeResourcesQueueViewSet(viewsets.ModelViewSet):
-    queryset = TimeResourcesQueue.objects.all()
-    serializer_class = TimeResourcesQueueSerializer
 
 @method_decorator(csrf_exempt, name='dispatch')
 class RegisterEmployeeView(APIView):
@@ -151,8 +148,55 @@ class RegisterEmployeeView(APIView):
             return JsonResponse({'status': 'success', 'user_id': user.id})
         else:
             logging.error("Registration form invalid: {}".format(form.errors))
-            return JsonResponse({'status': 'error', 'errors': form.errors})
+            return JsonResponse({'status': 'error', 'errors': form.errors}, status=400) 
     
     def get(self, request, *args, **kwargs):
         # Handle GET request if necessary, otherwise just return an error
         return JsonResponse({'status': 'error', 'message': 'Only POST requests are accepted'})
+    
+@method_decorator(csrf_exempt, name='dispatch')
+class LoginEmployeeView(APIView):
+    logging.basicConfig(level=logging.DEBUG)
+    logging.info("Received login request with data: {}")
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        password = request.data.get('password')  # For logging purposes, be cautious about logging plain passwords
+
+        logging.info(f"Received login request for username: {username}")
+        
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            if user.is_active:
+                login(request, user)
+                token, _ = Token.objects.get_or_create(user=user)
+                logging.debug(f"Login successful for user: {username}")
+                return Response({'status': 'success', 'user_id': user.id, 'token': token.key})
+            else:
+                logging.debug(f"Login failed for user: {username} - User is not active")
+                return Response({'status': 'error', 'message': 'User is not active'})
+        else:
+            logging.debug(f"Login failed for user: {username} - Invalid username or password")
+            return Response({'status': 'error', 'message': 'Invalid username or password'})
+        
+@method_decorator(csrf_exempt, name='dispatch')
+class LogoutEmployeeView(APIView):
+    def post(self, request, *args, **kwargs):
+        # Log the user out
+        logging.info(f"Received logout request from user: {request.user.username}")
+        logout(request)
+        logging.debug(f"Logout successful for user: {request.user.username}")
+        return Response({'status': 'success', 'message': 'Logged out successfully'})
+
+    def get(self, request, *args, **kwargs):
+        # Optionally, handle GET request if necessary, otherwise just return an error
+        return Response({'status': 'error', 'message': 'Only POST requests are accepted'})
+    pass
+
+class UserTimeResourcesQueueList(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        user = request.user
+        time_resources = TimeResourcesQueue.objects.filter(resource_item_code__username=user.username)
+        serializer = TimeResourcesQueueSerializer(time_resources, many=True)
+        return Response(serializer.data)

@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
+# Import logging configuration
 from .logging_config import LOGGING
 
 import logging
@@ -56,14 +57,21 @@ INSTALLED_APPS = [
     'django_extensions',
     'config.apps.ConfigAppConfig',
     'rest_framework',
+    'rest_framework.authtoken',
     'api',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -145,3 +153,16 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Session settings
+SESSION_COOKIE_AGE = 1800  # Set session cookie to expire in 30 minutes
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Session expires on browser close
+SESSION_SAVE_EVERY_REQUEST = True  # Extend session expiry on each user request
+
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_ALLOW_ALL = True  # For development only
+
+# Apply logging configuration from logging_config.py
+LOGGING = LOGGING

@@ -9,12 +9,12 @@ from .views import (
     ModalSelectList,
     OrdersList,
     OrderItemsList,
-    TimeResourcesQueueViewSet,
     RegisterEmployeeView,
+    LoginEmployeeView,
+    LogoutEmployeeView,
+    UserTimeResourcesQueueList,
 )
 
-router = routers.DefaultRouter()
-router.register(r'time-resources-queue', TimeResourcesQueueViewSet)
 
 urlpatterns = [
     path('service_categories/', ServiceCategoryList.as_view(), name='service_category_list'),
@@ -24,6 +24,8 @@ urlpatterns = [
     path('orders/', OrdersList.as_view(), name='order_list'),
     path('order_items/', OrderItemsList.as_view(), name='order_items_list'),
     path('submit_order/', create_order_and_items, name='submit_order'),
-    path('', include(router.urls)),
     path('register/', RegisterEmployeeView.as_view(), name='register_employee'),
+    path('login/', LoginEmployeeView.as_view(), name='login_employee'),
+    path('logout/', LogoutEmployeeView.as_view(), name='logout_employee'),
+    path('user-time-resources/', UserTimeResourcesQueueList.as_view(), name='user-time-resources'),
 ]
