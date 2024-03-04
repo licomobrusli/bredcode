@@ -1,6 +1,6 @@
 from django.test import TestCase
-from .models import ModalCount, Orders, OrderItems, Phase, Segment, SegmentParam
-from .submit_order import identify_phases_for_order_item
+from config.models import ModalCount, Orders, OrderItems, Phase, Segment, SegmentParam
+from config.submit_order import identify_phases_for_order_item
 
 class IdentifyPhasesForOrderItemTests(TestCase):
     def setUp(self):

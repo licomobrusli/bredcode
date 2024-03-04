@@ -3,7 +3,7 @@ from datetime import timedelta
 from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
-from .models import ServiceCategory, Services, ModalCount, Orders, OrderItems, Phase, PhaseResource, ResourceType, ResourceModel, Segment, SegmentParam, ResourceAvailability, TimeResourceItems, TimeResourcesQueue
+from config.models import ServiceCategory, Services, ModalCount, Orders, OrderItems, Phase, PhaseResource, ResourceType, ResourceModel, Segment, SegmentParam, ResourceAvailability, TimeResourceItems, TimeResourcesQueue
 from django.utils.timezone import now
 from prettytable import PrettyTable
 from config.time_utils import now_minutes

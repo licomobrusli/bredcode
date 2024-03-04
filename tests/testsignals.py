@@ -1,6 +1,6 @@
 # tests.py
 from django.test import TestCase
-from .models import (TimeResourcesQueue, ResourceModel, ModalCount, Segment, SegmentParam, ResourceType, ResourceAvailability, TimeResourceItems, ServiceCategory, Services)
+from config.models import (TimeResourcesQueue, ResourceModel, ModalCount, Segment, SegmentParam, ResourceType, ResourceAvailability, TimeResourceItems, ServiceCategory, Services)
 from datetime import timedelta
 from prettytable import PrettyTable
 from config.time_utils import now_minutes

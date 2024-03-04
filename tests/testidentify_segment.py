@@ -1,5 +1,5 @@
 from django.test import TestCase
-from .models import Segment, OrderItems, ModalCount, SegmentParam, Orders
+from config.models import Segment, OrderItems, ModalCount, SegmentParam, Orders
 
 class SegmentRetrievalTest(TestCase):
     def setUp(self):

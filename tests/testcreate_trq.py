@@ -1,6 +1,6 @@
 from django.test import TestCase
 from config.submit_order import create_time_resource_queue_entry
-from .models import TimeResourceItems, Segment, ResourceModel, SegmentParam, ResourceType, ResourceAvailability, TimeResourcesQueue
+from config.models import TimeResourceItems, Segment, ResourceModel, SegmentParam, ResourceType, ResourceAvailability, TimeResourcesQueue
 from datetime import timedelta
 from django.utils.timezone import now
 

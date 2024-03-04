@@ -5,15 +5,16 @@ from rest_framework.views import APIView
 from django.http import JsonResponse
 from rest_framework.response import Response
 from rest_framework import viewsets
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.authtoken.models import Token
 from forms.register_user import EmployeeRegistrationForm
-from config.models import ServiceCategory, Services, ModalCount, ModalSelect, Orders, OrderItems, TimeResourcesQueue, Employee
+from config.models import ServiceCategory, Services, ModalCount, ModalSelect, Orders, OrderItems, TimeResourcesQueue, Employee, TimeResourceItems
 from .serializers import  ServiceCategorySerializer, ServicesSerializer, ModalCountSerializer, ModalSelectSerializer, OrdersSerializer, OrderItemsSerializer, TimeResourcesQueueSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework.permissions import IsAuthenticated
+from django.core.serializers import serialize
 import logging
 
 class ServiceCategoryList(APIView):
@@ -197,6 +198,18 @@ class UserTimeResourcesQueueList(APIView):
 
     def get(self, request, format=None):
         user = request.user
-        time_resources = TimeResourcesQueue.objects.filter(resource_item_code__username=user.username)
-        serializer = TimeResourcesQueueSerializer(time_resources, many=True)
-        return Response(serializer.data)
+        try:
+            # First, get the employee related to this user
+            employee = Employee.objects.get(resource_item__resource_item_code=user.username)
+            # Then, filter TimeResourcesQueue by the employee's resource item
+            time_resources = TimeResourcesQueue.objects.filter(resource_item_code=employee.resource_item)
+            serializer = TimeResourcesQueueSerializer(time_resources, many=True)
+            
+            # Use Django's serializer to convert queryset into JSON string for logging
+            serialized_time_resources = serialize('json', time_resources)
+            logging.debug("Fetched time resources: %s", serialized_time_resources)
+            
+            return Response(serializer.data)
+        except Employee.DoesNotExist:
+            logging.error('Employee with this user does not exist or has no resource items assigned')
+            return Response({'error': 'Employee with this user does not exist or has no resource items assigned'}, status=404)

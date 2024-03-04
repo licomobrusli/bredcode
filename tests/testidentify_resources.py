@@ -1,6 +1,6 @@
 from django.test import TestCase
-from .models import Phase, PhaseResource, ResourceType, ResourceModel, Segment, SegmentParam, ModalCount
-from .submit_order import identify_resources_for_phase  # Adjust import path as necessary
+from config.models import Phase, PhaseResource, ResourceType, ResourceModel, Segment, SegmentParam, ModalCount
+from config.submit_order import identify_resources_for_phase  # Adjust import path as necessary
 
 class IdentifyResourcesForPhaseTests(TestCase):
     def setUp(self):
