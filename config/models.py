@@ -93,7 +93,7 @@ class Segment(models.Model):
 
 
 class ModalCount(models.Model):
-    code = models.OneToOneField(Segment, on_delete=models.CASCADE, primary_key=True, related_name='modal_count')
+    code = models.CharField(max_length=10, primary_key=True)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255, blank=True, null=True)
     duration = models.IntegerField()
@@ -281,7 +281,7 @@ class Phase(models.Model):
 
 
 class PhaseResource(models.Model):
-    code = models.CharField(max_length=5, unique=True)
+    code = models.OneToOneField(Segment, on_delete=models.CASCADE, unique=True, related_name='phase_resource')
     name = models.CharField(max_length=100)
     phase_code = models.ForeignKey(Phase, on_delete=models.PROTECT)
     resource_models_code = models.ForeignKey(ResourceModel, on_delete=models.CASCADE)
@@ -437,3 +437,16 @@ class TimeResourceItems(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.resource_item_code})"
+    
+class ScheduleElements(models.Model):
+    code = models.OneToOneField(Segment, on_delete=models.CASCADE, primary_key=True, related_name='schedule_elements')
+    name = models.CharField(max_length=25)
+    description = models.TextField()
+    date_created = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+    class Meta:
+        db_table = 'schedule_elements'  # Ensures the table name is exactly 'schedule_elements'
+        ordering = ['code']  # Default ordering
