@@ -183,6 +183,68 @@ class OrderAPITests(TestCase):
             calc_available='-1'
         )
 
+        # Create Segment instances for each PhaseResource with matching codes
+        self.segment_for_shampoo = Segment.objects.create(
+            code='PRW01',  # Matching code for the PhaseResource
+            type='Shampoo',  # Description or type for the Segment
+            segment_param=self.segment_param_tasks  # The shared SegmentParam instance
+        )
+
+        self.segment_for_condition = Segment.objects.create(
+            code='PRW02',  # Matching code for the PhaseResource
+            type='Condition',  # Description or type for the Segment
+            segment_param=self.segment_param_tasks
+        )
+
+        self.segment_for_blowdry = Segment.objects.create(
+            code='PRW03',  # Matching code for the PhaseResource
+            type='Blowdry',  # Description or type for the Segment
+            segment_param=self.segment_param_tasks
+        )
+
+        self.segment_for_cut = Segment.objects.create(
+            code='PRC01',  # Matching code for the PhaseResource
+            type='Cut',  # Description or type for the Segment
+            segment_param=self.segment_param_tasks
+        )
+
+        self.segment_for_prep = Segment.objects.create(
+            code='PPC01',  # Matching code for the PhaseResource
+            type='Prep',  # Description or type for the Segment
+            segment_param=self.segment_param_tasks
+        )
+
+        self.segment_for_prep_2 = Segment.objects.create(
+            code='PRC99',  # Matching code for the PhaseResource (another prep phase)
+            type='Prep2',  # Description or type for the Segment
+            segment_param=self.segment_param_tasks
+        )
+
+        self.segment_for_waitprep = Segment.objects.create(
+            code='PRC02',  # Matching code for the PhaseResource
+            type='WaitPrep',  # Description or type for the Segment
+            segment_param=self.segment_param_tasks
+        )
+
+        self.segment_for_color = Segment.objects.create(
+            code='PRC03',  # Matching code for the PhaseResource
+            type='Color',  # Description or type for the Segment
+            segment_param=self.segment_param_tasks
+        )
+
+        self.segment_for_waitcolor = Segment.objects.create(
+            code='PRC04',  # Matching code for the PhaseResource
+            type='WaitColor',  # Description or type for the Segment
+            segment_param=self.segment_param_tasks
+        )
+
+        self.segment_for_rinse = Segment.objects.create(
+            code='PRC05',  # Matching code for the PhaseResource
+            type='Rinse',  # Description or type for the Segment
+            segment_param=self.segment_param_tasks
+        )
+
+
         # Create Segment instance
         self.segment_task_wash = Segment.objects.create(
             code='WSH1',
@@ -246,7 +308,7 @@ class OrderAPITests(TestCase):
         )
 
         self.phase_resource_shampoo = PhaseResource.objects.create(
-            code='PRW01', 
+            code=self.segment_for_shampoo, 
             name='Barber to shampoo', 
             phase_code=self.phase_shampoo, 
             resource_models_code=self.resource_model_barber, 
@@ -254,7 +316,7 @@ class OrderAPITests(TestCase):
         )
 
         self.phase_resource_condition = PhaseResource.objects.create(
-            code='PRW02', 
+            code=self.segment_for_condition, 
             name='Barber to condition', 
             phase_code=self.phase_condition, 
             resource_models_code=self.resource_model_barber, 
@@ -262,7 +324,7 @@ class OrderAPITests(TestCase):
         )
 
         self.phase_resource_blowdry = PhaseResource.objects.create(
-            code='PRW03', 
+            code=self.segment_for_blowdry, 
             name='Barber to blowdry', 
             phase_code=self.phase_blowdry, 
             resource_models_code=self.resource_model_barber, 
@@ -308,7 +370,7 @@ class OrderAPITests(TestCase):
         )
 
         self.phase_resource_cut = PhaseResource.objects.create(
-            code='PRC01', 
+            code=self.segment_for_cut, 
             name='Barber to cut', 
             phase_code=self.phase_cut, 
             resource_models_code=self.resource_model_barber, 
@@ -386,7 +448,7 @@ class OrderAPITests(TestCase):
         )
 
         self.phase_resource1_prep = PhaseResource.objects.create(
-            code='PPC01', 
+            code=self.segment_for_prep, 
             name='Barber to prep', 
             phase_code=self.phase_prep, 
             resource_models_code=self.resource_model_barber, 
@@ -394,7 +456,7 @@ class OrderAPITests(TestCase):
         )
         
         self.phase_resource2_prep = PhaseResource.objects.create(
-            code='PRC99', 
+            code=self.segment_for_prep_2, 
             name='Barber to prep', 
             phase_code=self.phase_prep, 
             resource_models_code=self.resource_model_barber, 
@@ -402,7 +464,7 @@ class OrderAPITests(TestCase):
         )
 
         self.phase_resource_waitprep = PhaseResource.objects.create(
-            code='PRC02', 
+            code=self.segment_for_waitprep, 
             name='Waiting chair for prep', 
             phase_code=self.phase_waitprep, 
             resource_models_code=self.resource_model_chair, 
@@ -410,7 +472,7 @@ class OrderAPITests(TestCase):
         )
 
         self.phase_resource_color = PhaseResource.objects.create(
-            code='PRC03', 
+            code=self.segment_for_color, 
             name='Barber to color', 
             phase_code=self.phase_color, 
             resource_models_code=self.resource_model_barber, 
@@ -418,7 +480,7 @@ class OrderAPITests(TestCase):
         )
 
         self.phase_resource_waitcolor = PhaseResource.objects.create(
-            code='PRC04', 
+            code=self.segment_for_waitcolor, 
             name='Waiting chair for color', 
             phase_code=self.phase_waitcolor, 
             resource_models_code=self.resource_model_chair, 
@@ -426,7 +488,7 @@ class OrderAPITests(TestCase):
         )
 
         self.phase_resource_rinse = PhaseResource.objects.create(
-            code='PRC05', 
+            code=self.segment_for_rinse, 
             name='Barber to rinse', 
             phase_code=self.phase_rinse, 
             resource_models_code=self.resource_model_barber, 

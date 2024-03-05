@@ -104,10 +104,6 @@ class OrdersList(APIView):
         serializer = OrdersSerializer(orders, many=False)
         return Response(serializer.data)
 
-# class OrderCreate(CreateAPIView):
-#     queryset = Orders.objects.all()
-#     serializer_class = OrdersSerializer
-
 class OrderItemsList(APIView):
     def get(self, request, format=None):
         order_items = OrderItems.objects.all()

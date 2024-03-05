@@ -5,14 +5,14 @@ from django.db.models import Q, F
 from datetime import timedelta
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Orders, OrderItems, ModalCount, Phase, PhaseResource, ResourceAvailability, TimeResourcesQueue, TimeResourceItems
+from .models import Orders, OrderItems, ModalCount, Phase, PhaseResource, ResourceAvailability, TimeResourcesQueue
 from django.utils.timezone import now
 from rest_framework import status
 from config.time_utils import now_minutes
 
 import logging
-# logger = logging.get# logger(__name__)
-# logger.debug(now_minutes())
+
+logger = logging.getLogger(__name__)
 
 def identify_phases_for_order_item(order_item):
     phases = Phase.objects.filter(modal_count=order_item.modal_count).order_by('sequence')
@@ -62,6 +62,8 @@ def find_earliest_availability(resource_model_code, phase_duration, preferred_re
     return None, None, None
 
 def create_time_resource_queue_entry(resource_item_code, segment, segment_start, segment_end, resource_model, segment_params=None, order=None):
+    # log what is recieved in full
+    logger.debug(f"create_time_resource_queue_entry: {resource_item_code}, {segment}, {segment_start}, {segment_end}, {resource_model}, {segment_params}, {order}")
     new_queue_entry = TimeResourcesQueue(
         resource_item_code=resource_item_code,  # Assign the instance instead of the string
         segment=segment,
@@ -78,12 +80,13 @@ def create_time_resource_queue_entry(resource_item_code, segment, segment_start,
 @api_view(['POST'])
 def create_order_and_items(request):
     with transaction.atomic():
-        # logger.debug('CREATE_ORDER_AND_ITEMS ##########################################')
+        logger.debug('CREATE_ORDER_AND_ITEMS ##########################################')
         preferred_resource_items = []
         last_phase_end_time = None
 
         order_data = request.data.get('order')
         order_number = order_data.get('order_number')
+        logging.debug(f'Received order data: {order_data}')
 
         order = Orders(
             item_count=order_data['item_count'],
@@ -91,12 +94,12 @@ def create_order_and_items(request):
             order_number=order_number
         )
         order.save()
-        # logger.debug(f"Order exists: {Orders.objects.all()}")
 
         temp_order_items = []
         for item_data in request.data.get('items', []):
             modal_count_code = item_data.get('modal_count')
             modal_count = get_object_or_404(ModalCount, code=modal_count_code)
+            logging.debug(f'Processing order item: {item_data}')
 
             order_item = OrderItems(
                 order=order,
@@ -107,28 +110,27 @@ def create_order_and_items(request):
                 item_price=item_data['item_price'],
             )   
             order_item.save()
-            # logger.debug(f"OrderItem exists: {OrderItems.objects.all()}")
             temp_order_items.append(order_item)
 
         # temp_order_items.sort(key=lambda x: x[0])
-        # logger.debug(f"Temp Order Items: {temp_order_items}")
+        logger.debug(f"Temp Order Items: {temp_order_items}")
 
         for order_item in temp_order_items:
             phases = identify_phases_for_order_item(order_item)
-            # logger.debug(f"Phases: {phases}")
+            logger.debug(f"Phases: {phases}")
             for phase in phases:
-                segment = phase.modal_count.code
                 time_resources = identify_resources_for_phase(phase)
-                # logger.debug(f"Time Resources: {time_resources}")
+                logger.debug(f"Time Resources: {time_resources}")
                 for resource in time_resources:
+                    segment = resource.code
                     start_time, end_time, resource_item = find_earliest_availability(
                         resource.resource_models_code.code,
                         phase.duration,
                         preferred_resource_items,
                         last_phase_end_time
                     )
-                    # logger.debug(f"Resource: {resource.name}, Start: {start_time}, End: {end_time}, Item: {resource_item}")
                     if start_time and end_time and resource_item:
+                        logger.debug(f"resource_item: {resource_item}, Segment: {segment}, Start: {start_time}, End: {end_time}, Resource Model: {resource.resource_models_code}, Segment Params: {segment.segment_param}, Order: {order}")
                         create_time_resource_queue_entry(
                             resource_item_code=resource_item,
                             segment=segment,
@@ -141,7 +143,10 @@ def create_order_and_items(request):
                         last_phase_end_time = end_time
                         if resource_item not in preferred_resource_items:
                             preferred_resource_items.append(resource_item)
+                            logging.debug(f'Added time resource queue entry for resource item {resource_item}')
                         break
                     else:
+                        logging.error(f"No available resources for phase {phase}")
                         raise Exception(f"No available resources for phase")
+        logging.debug(f'Order processing completed: {order.order_number}')
         return Response({'status': 'OK', 'order_number': order.order_number}, status=status.HTTP_201_CREATED)

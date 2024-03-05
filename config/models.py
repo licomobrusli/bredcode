@@ -4,6 +4,7 @@ import random
 import string
 from django.apps import apps
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
 from datetime import datetime, timedelta, date
 
 class ServiceCategory(models.Model):
@@ -288,8 +289,14 @@ class PhaseResource(models.Model):
     resource_types_code = models.ForeignKey(ResourceType, on_delete=models.CASCADE)
     date_created = models.DateField(auto_now_add=True)
 
-    def __str__(self):
-        return self.name
+    def clean(self):
+        super().clean()
+        if self.code.type != 'PhaseResource':
+            raise ValidationError('The Segment instance must have type "PhaseResource"')
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = 'phase_resources'
@@ -444,8 +451,14 @@ class ScheduleElements(models.Model):
     description = models.TextField()
     date_created = models.DateField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.name} ({self.code})"
+    def clean(self):
+        super().clean()
+        if self.code.type != 'ScheduleElements':
+            raise ValidationError('The Segment instance must have type "ScheduleElements"')
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = 'schedule_elements'  # Ensures the table name is exactly 'schedule_elements'
