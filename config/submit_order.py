@@ -61,12 +61,13 @@ def find_earliest_availability(resource_model_code, phase_duration, preferred_re
 
     return None, None, None
 
-def create_time_resource_queue_entry(resource_item_code, segment, segment_start, segment_end, resource_model, segment_params=None, order=None):
+def create_time_resource_queue_entry(resource_item_code, segment, segment_name, segment_start, segment_end, resource_model, segment_params=None, order=None):
     # log what is recieved in full
-    logger.debug(f"create_time_resource_queue_entry: {resource_item_code}, {segment}, {segment_start}, {segment_end}, {resource_model}, {segment_params}, {order}")
+    logger.debug(f"create_time_resource_queue_entry: {resource_item_code}, {segment}, {segment_name} {segment_start}, {segment_end}, {resource_model}, {segment_params}, {order}")
     new_queue_entry = TimeResourcesQueue(
         resource_item_code=resource_item_code,  # Assign the instance instead of the string
         segment=segment,
+        segment_name=segment_name,
         segment_start=segment_start,
         segment_end=segment_end,
         resource_model=resource_model,
@@ -123,6 +124,7 @@ def create_order_and_items(request):
                 logger.debug(f"Time Resources: {time_resources}")
                 for resource in time_resources:
                     segment = resource.code
+                    segment_name = resource.name
                     start_time, end_time, resource_item = find_earliest_availability(
                         resource.resource_models_code.code,
                         phase.duration,
@@ -130,10 +132,11 @@ def create_order_and_items(request):
                         last_phase_end_time
                     )
                     if start_time and end_time and resource_item:
-                        logger.debug(f"resource_item: {resource_item}, Segment: {segment}, Start: {start_time}, End: {end_time}, Resource Model: {resource.resource_models_code}, Segment Params: {segment.segment_param}, Order: {order}")
+                        logger.debug(f"resource_item: {resource_item}, Segment: {segment}, segment name: {segment_name} Start: {start_time}, End: {end_time}, Resource Model: {resource.resource_models_code}, Segment Params: {segment.segment_param}, Order: {order}")
                         create_time_resource_queue_entry(
                             resource_item_code=resource_item,
                             segment=segment,
+                            segment_name=segment_name,
                             segment_start=start_time,
                             segment_end=end_time,
                             resource_model=resource.resource_models_code,

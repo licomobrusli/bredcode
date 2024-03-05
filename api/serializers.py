@@ -36,7 +36,6 @@ class OrderItemsSerializer(serializers.ModelSerializer):
 
 class TimeResourcesQueueSerializer(serializers.ModelSerializer):
     resource_item_name = serializers.SerializerMethodField()
-    segment_name = serializers.SerializerMethodField()
     resource_model_name = serializers.SerializerMethodField()
 
     class Meta:
@@ -57,14 +56,6 @@ class TimeResourcesQueueSerializer(serializers.ModelSerializer):
 
     def get_resource_item_name(self, obj):
         return obj.resource_item_code.name if obj.resource_item_code else None
-
-    def get_segment_name(self, obj):
-        if obj.segment and hasattr(obj.segment, 'modal_count'):
-            logging.debug(f"Segment Name: {obj.segment.modal_count.name}")
-            return obj.segment.modal_count.name
-        else:
-            logging.debug("Segment or ModalCount missing")
-            return None
 
     def get_resource_model_name(self, obj):
         return obj.resource_model.name if obj.resource_model else None
