@@ -41,6 +41,7 @@ class TimeResourcesQueueSerializer(serializers.ModelSerializer):
     class Meta:
         model = TimeResourcesQueue
         fields = [
+            'id',
             'resource_item_code',
             'resource_item_name',
             'segment',
