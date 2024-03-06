@@ -2,10 +2,9 @@ from django.utils import timezone
 from django.db.models import Q
 from django.db.models.functions import Now, ExtractWeekDay
 from django.db import transaction
-from config.models import (TimeResourcesQueue, TimeResourcesQueueHistory, 
-                           TimeResourceScheduleIndex, ScheduleTemplate, Segment)
+from config.models import (TimeResourcesQueue, TimeResourcesQueueHistory, TimeResourceScheduleIndex, ScheduleTemplate, Segment, ScheduleElements)
 import datetime
-
+import logging
 
 def archive_all_time_resource_queue_items():
     with transaction.atomic():
@@ -18,6 +17,7 @@ def archive_all_time_resource_queue_items():
                 original_id=item.id,
                 resource_item_code=item.resource_item_code,
                 segment=item.segment,
+                segment_name=item.segment_name,
                 segment_start=item.segment_start,
                 segment_end=item.segment_end,
                 date_created=item.date_created,
@@ -54,11 +54,20 @@ def start_of_day_process():
             ).first()
 
             if schedule_template:
-                segment_instance, created = Segment.objects.get_or_create(code='SHFT')
+                try:
+                    shift_element = ScheduleElements.objects.get(code='SHFT')
+                    segment_instance = shift_element.code
+                except ScheduleElements.DoesNotExist:
+                    logging.error("ScheduleElement with code 'SHFT' does not exist. Aborting start of day process.")
+                    return  # Exit the function if no ScheduleElements found
+                except Segment.DoesNotExist:
+                    logging.error("Segment related to 'SHFT' does not exist. Aborting start of day process.")
+                    return  # Exit the function if related Segment does not exist
                 # Create and save TimeResourcesQueue object
                 TimeResourcesQueue.objects.create(
                     resource_item_code=trs.resource_item,
                     segment=segment_instance,
+                    segment_name=shift_element.name,
                     segment_start=timezone.make_aware(datetime.datetime.combine(current_date, schedule_template.shift_start)),
                     segment_end=timezone.make_aware(datetime.datetime.combine(current_date, schedule_template.shift_end)),
                     date_created=timezone.now(),

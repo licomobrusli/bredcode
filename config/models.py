@@ -306,7 +306,7 @@ class PhaseResource(models.Model):
 class TimeResourcesQueue(models.Model):
     resource_item_code = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE)
     segment = models.ForeignKey('Segment', on_delete=models.CASCADE, related_name='time_resources_queue')
-    segment_name = models.CharField(max_length=100, blank=True, null=True)
+    segment_name = models.CharField(max_length=100)
     segment_start = models.DateTimeField()
     segment_end = models.DateTimeField()
     staff_start = models.DateTimeField(blank=True, null=True)
@@ -329,6 +329,7 @@ class TimeResourcesQueueHistory(models.Model):
     original_id = models.IntegerField()
     resource_item_code = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE)
     segment = models.CharField(max_length=50)
+    segment_name = models.CharField(max_length=100, blank=True, null=True)
     segment_start = models.DateTimeField()
     segment_end = models.DateTimeField()
     staff_start = models.DateTimeField(blank=True, null=True)
