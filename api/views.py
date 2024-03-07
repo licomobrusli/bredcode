@@ -1,10 +1,9 @@
 # views.py
 from django.shortcuts import get_object_or_404
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
 from django.http import JsonResponse
 from rest_framework.response import Response
-from rest_framework import viewsets
 from django.contrib.auth.models import Group, User
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.authtoken.models import Token
@@ -15,6 +14,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework.permissions import IsAuthenticated
 from django.core.serializers import serialize
+from django.utils.dateparse import parse_datetime
+from datetime import timedelta
 import logging
 
 class ServiceCategoryList(APIView):
@@ -209,3 +210,46 @@ class UserTimeResourcesQueueList(APIView):
         except Employee.DoesNotExist:
             logging.error('Employee with this user does not exist or has no resource items assigned')
             return Response({'error': 'Employee with this user does not exist or has no resource items assigned'}, status=404)
+
+        
+class UpdateTimeResource(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, time_resource_id):
+        # Extract data from the request
+        staff_start = request.data.get('staff_start')
+        staff_end = request.data.get('staff_end')
+        staff_timer = request.data.get('staff_timer', 0)  # Default to 0 if not provided
+
+        # Convert staff_start and staff_end from ISO 8601 string to datetime objects
+        if staff_start:
+            staff_start = parse_datetime(staff_start)
+        if staff_end:
+            staff_end = parse_datetime(staff_end)
+
+        # Convert staff_timer from seconds to a timedelta object
+        staff_timer = timedelta(seconds=int(staff_timer))
+
+        try:
+            # Get the TimeResource instance and update its fields
+            time_resource = TimeResourcesQueue.objects.get(pk=time_resource_id)
+            if staff_start:
+                time_resource.staff_start = staff_start
+            if staff_end:
+                time_resource.staff_end = staff_end
+            time_resource.staff_timer = staff_timer  # Assuming you want to overwrite even if it's zero
+
+            # Save the updated instance
+            time_resource.save()
+
+            # Respond with the updated information
+            return Response({
+                'id': time_resource.id,
+                'staff_start': time_resource.staff_start.isoformat() if time_resource.staff_start else None,
+                'staff_end': time_resource.staff_end.isoformat() if time_resource.staff_end else None,
+                'staff_timer': time_resource.staff_timer.total_seconds() if time_resource.staff_timer else None,
+            })
+        except TimeResourcesQueue.DoesNotExist:
+            return Response({'error': 'TimeResource not found'}, status=404)
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)
