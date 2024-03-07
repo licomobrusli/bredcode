@@ -204,14 +204,13 @@ class UserTimeResourcesQueueList(APIView):
             
             # Use Django's serializer to convert queryset into JSON string for logging
             serialized_time_resources = serialize('json', time_resources)
-            logging.debug("Fetched time resources: %s", serialized_time_resources)
-            
+            logging.debug("Fetched time resources: %s", serializer.data)
             return Response(serializer.data)
         except Employee.DoesNotExist:
             logging.error('Employee with this user does not exist or has no resource items assigned')
             return Response({'error': 'Employee with this user does not exist or has no resource items assigned'}, status=404)
 
-        
+
 class UpdateTimeResource(APIView):
     permission_classes = [IsAuthenticated]
 
