@@ -311,6 +311,7 @@ class TimeResourcesQueue(models.Model):
     segment_end = models.DateTimeField()
     staff_start = models.DateTimeField(blank=True, null=True)
     staff_end = models.DateTimeField(blank=True, null=True)
+    staff_timer = models.DurationField(blank=True, null=True)
     date_created = models.DateField(auto_now_add=True)
     resource_model = models.ForeignKey('ResourceModel', on_delete=models.CASCADE)
     segment_params = models.ForeignKey('SegmentParam', on_delete=models.PROTECT)
