@@ -20,6 +20,7 @@ class ServiceCategory(models.Model):
     class Meta:
         db_table = 'service_categories' # Ensures the table name is exact
         ordering = ['id']  # Default ordering
+        verbose_name_plural = 'Service Categories'  # Plural name for the model
 
 
 class Services(models.Model):
@@ -38,6 +39,7 @@ class Services(models.Model):
     class Meta:
         db_table = 'services' # Ensures the table name is exact
         ordering = ['id']  # Default ordering
+        verbose_name = 'Service'
 
 class ModalSelect(models.Model):
     code = models.CharField(max_length=5, unique=True)
@@ -144,6 +146,7 @@ class Orders(models.Model):
     class Meta:
         db_table = 'orders'
         ordering = ['id']
+        verbose_name = 'Order'
 
 
 class OrderItems(models.Model):
@@ -178,7 +181,7 @@ class OrderItems(models.Model):
     class Meta:
         db_table = 'order_items'
         ordering = ['id']
-
+        verbose_name = 'Order Item'
 
 class Employee(models.Model):
     resource_item = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE, related_name='employees')

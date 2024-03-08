@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 django = "*"
+django-admin-interface = "*"
 django-environ = "*"
 djangorestframework = "*"
 psycopg2-binary = "*"
