@@ -466,3 +466,20 @@ class ScheduleElements(models.Model):
     class Meta:
         db_table = 'schedule_elements'  # Ensures the table name is exactly 'schedule_elements'
         ordering = ['code']  # Default ordering
+
+class EmployeePhases(models.Model):
+    employee_phase = models.CharField(max_length=255, unique=True, primary_key=True)
+    resource_item_code = models.ForeignKey(TimeResourceItems, on_delete=models.CASCADE, related_name='employee_phases')
+    resource_model_id = models.ForeignKey(ResourceModel, on_delete=models.CASCADE, related_name='employee_phases')
+    phase_resource_id = models.ForeignKey(PhaseResource, on_delete=models.CASCADE, related_name='employee_phases')
+    avg_duration = models.IntegerField(null=True, blank=True)
+    avg_score = models.FloatField(null=True, blank=True)
+    experience = models.IntegerField(null=True, blank=True)
+    date_created = models.DateField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'employee_phases'  # Ensures the table name is exactly 'employee_phases'
+        ordering = ['employee_phase']  # Default ordering
+
+    def __str__(self):
+        return self.employee_phase

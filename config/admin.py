@@ -1,6 +1,6 @@
 # admin.py
 from django.contrib import admin
-from .models import ServiceCategory, Services, ModalCount, ModalSelect, Orders, OrderItems
+from .models import ServiceCategory, Services, ModalCount, ModalSelect, Orders, OrderItems, Employee
 
 class ServiceCategoryAdmin(admin.ModelAdmin):
     list_display = ['code', 'name', 'description', 'image_path', 'date_created']
@@ -43,3 +43,10 @@ class OrderItemsAdmin(admin.ModelAdmin):
     list_filter = ['order', 'date_created']
 
 admin.site.register(OrderItems, OrderItemsAdmin)
+
+class EmployeeAdmin(admin.ModelAdmin):
+    list_display = ['name', 'surname', 'dni', 'naf', 'dob', 'tel', 'email', 'street', 'town', 'postcode', 'resource_item', 'resource_model']
+    search_fields = ['name', 'surname', 'dni', 'naf']
+    list_filter = ['resource_item', 'resource_model']
+
+admin.site.register(Employee, EmployeeAdmin)

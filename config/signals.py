@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.db import transaction
-from .models import TimeResourcesQueue, ResourceAvailability
+from .models import TimeResourcesQueue, ResourceAvailability, Employee, PhaseResource, EmployeePhases
 import logging
 from prettytable import PrettyTable
 from config.time_utils import now_minutes
@@ -68,3 +68,24 @@ def update_resource_availability(sender, instance, **kwargs):
             duration=duration
         )
         logger.info(f"ResourceAvailability record created: Start {start}, End {end}, for {instance.resource_item_code}")
+
+@receiver(post_save, sender=Employee)
+def create_employee_phases(sender, instance, created, **kwargs):
+    if created:
+        employee_phases_list = []  # List to hold instances for bulk creation
+        phase_resources = PhaseResource.objects.filter(resource_models_code=instance.resource_model)
+
+        for phase_resource in phase_resources:
+            # Create an EmployeePhases instance and add it to the list
+            employee_phases_instance = EmployeePhases(
+                resource_item_code=instance,  # Directly use the Employee instance
+                phase_resource_id=phase_resource,  # Directly use the PhaseResource instance
+                employee_phase=f"{instance.id}_{phase_resource.id}",  # Construct employee_phase string based on IDs
+                resource_model_id=phase_resource.resource_models_code,  # Set this field as in the original logic
+                # Add other necessary fields as needed
+            )
+            employee_phases_list.append(employee_phases_instance)
+        
+        # Use bulk_create to save all new EmployeePhases instances at once
+        with transaction.atomic():  # Ensure database integrity
+            EmployeePhases.objects.bulk_create(employee_phases_list)
