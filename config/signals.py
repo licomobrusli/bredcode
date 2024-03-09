@@ -79,8 +79,8 @@ def create_employee_phases(sender, instance, created, **kwargs):
             # Create an EmployeePhases instance and add it to the list
             employee_phases_instance = EmployeePhases(
                 resource_item_code=instance,  # Directly use the Employee instance
-                phase_resource_id=phase_resource,  # Directly use the PhaseResource instance
-                employee_phase=f"{instance}_{phase_resource.id}",  # Construct employee_phase string based on IDs
+                phase_resource_code=phase_resource,  # Directly use the PhaseResource instance
+                employee_phase=f"{instance}_{phase_resource.code}",  # Construct employee_phase string based on IDs
                 resource_model_id=phase_resource.resource_models_code,  # Set this field as in the original logic
                 # Add other necessary fields as needed
             )
