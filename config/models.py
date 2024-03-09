@@ -472,7 +472,7 @@ class ScheduleElements(models.Model):
 
 class EmployeePhases(models.Model):
     employee_phase = models.CharField(max_length=255, unique=True, primary_key=True)
-    resource_item_code = models.ForeignKey(TimeResourceItems, on_delete=models.CASCADE, related_name='employee_phases')
+    resource_item_code = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='employee_phases')
     resource_model_id = models.ForeignKey(ResourceModel, on_delete=models.CASCADE, related_name='employee_phases')
     phase_resource_id = models.ForeignKey(PhaseResource, on_delete=models.CASCADE, related_name='employee_phases')
     avg_duration = models.IntegerField(null=True, blank=True)
