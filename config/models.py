@@ -1,7 +1,5 @@
 from django.db import models
 from django.utils import timezone
-import random
-import string
 from django.apps import apps
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
@@ -269,11 +267,11 @@ class ResourceModel(models.Model):
 
 
 class Phase(models.Model):
-    code = models.CharField(max_length=5, unique=True)
+    code = models.CharField(max_length=5, unique=True, primary_key=True)
     name = models.CharField(max_length=100)
     sequence = models.IntegerField()
     duration = models.IntegerField()
-    modal_count = models.ForeignKey(ModalCount, on_delete=models.PROTECT, null=True, blank=True)
+    modal_count = models.ForeignKey('ModalCount', on_delete=models.PROTECT, null=True, blank=True)  # Assuming 'ModalCount' is a model you have defined elsewhere
     date_created = models.DateField(auto_now_add=True)
 
     def __str__(self):
@@ -281,15 +279,14 @@ class Phase(models.Model):
 
     class Meta:
         db_table = 'phases'
-        ordering = ['id']
-
+        ordering = ['code']  # Changed from 'id' to 'code'
 
 class PhaseResource(models.Model):
-    code = models.OneToOneField(Segment, on_delete=models.CASCADE, unique=True, related_name='phase_resource')
+    code = models.OneToOneField('Segment', on_delete=models.CASCADE, unique=True, primary_key=True, related_name='phase_resource')  # Assuming 'Segment' is a model you have defined elsewhere
     name = models.CharField(max_length=100)
     phase_code = models.ForeignKey(Phase, on_delete=models.PROTECT)
-    resource_models_code = models.ForeignKey(ResourceModel, on_delete=models.CASCADE)
-    resource_types_code = models.ForeignKey(ResourceType, on_delete=models.CASCADE)
+    resource_models_code = models.ForeignKey('ResourceModel', on_delete=models.CASCADE)  # Assuming 'ResourceModel' is a model you have defined elsewhere
+    resource_types_code = models.ForeignKey('ResourceType', on_delete=models.CASCADE)  # Assuming 'ResourceType' is a model you have defined elsewhere
     date_created = models.DateField(auto_now_add=True)
 
     def clean(self):
@@ -303,7 +300,7 @@ class PhaseResource(models.Model):
 
     class Meta:
         db_table = 'phase_resources'
-        ordering = ['id']
+        ordering = ['code']  # Changed from 'id' to 'code'
 
 
 class TimeResourcesQueue(models.Model):
