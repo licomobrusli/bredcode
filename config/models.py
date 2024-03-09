@@ -1,14 +1,12 @@
 from django.db import models
 from django.utils import timezone
-import random
-import string
 from django.apps import apps
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from datetime import datetime, timedelta, date
 
 class ServiceCategory(models.Model):
-    code = models.CharField(max_length=5, unique=True)
+    code = models.CharField(max_length=5, unique=True, primary_key=True)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255, blank=True, null=True)
     image_path = models.CharField(max_length=1000, blank=True, null=True)
@@ -19,12 +17,12 @@ class ServiceCategory(models.Model):
 
     class Meta:
         db_table = 'service_categories' # Ensures the table name is exact
-        ordering = ['id']  # Default ordering
+        ordering = ['code']  # Default ordering
         verbose_name_plural = 'Service Categories'  # Plural name for the model
 
 
 class Services(models.Model):
-    code = models.CharField(max_length=5, unique=True)
+    code = models.CharField(max_length=5, unique=True, primary_key=True)
     service_category = models.ForeignKey(ServiceCategory, on_delete=models.PROTECT, null=True, blank=True)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255, blank=True, null=True)
@@ -38,11 +36,11 @@ class Services(models.Model):
 
     class Meta:
         db_table = 'services' # Ensures the table name is exact
-        ordering = ['id']  # Default ordering
+        ordering = ['code']  # Default ordering
         verbose_name = 'Service'
 
 class ModalSelect(models.Model):
-    code = models.CharField(max_length=5, unique=True)
+    code = models.CharField(max_length=5, unique=True, primary_key=True)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255, blank=True, null=True)
     duration = models.IntegerField()
@@ -57,7 +55,7 @@ class ModalSelect(models.Model):
 
     class Meta:
         db_table = 'modal_select'  # Ensures the table name is exactly 'modal_select'
-        ordering = ['id']  # Default ordering
+        ordering = ['code']  # Default ordering
 
 
 class SegmentParam(models.Model):
@@ -184,7 +182,7 @@ class OrderItems(models.Model):
         verbose_name = 'Order Item'
 
 class Employee(models.Model):
-    resource_item = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE, related_name='employees')
+    resource_item = models.OneToOneField('TimeResourceItems', on_delete=models.CASCADE, related_name='employees', primary_key=True)
     name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
     dni = models.CharField(max_length=10, unique=True)
@@ -210,10 +208,11 @@ class Employee(models.Model):
 
     class Meta:
         db_table = 'employees'
-        ordering = ['id']
+        ordering = ['resource_item']
+
 
 class Equipment(models.Model):
-    resource_item = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE, related_name='equipment')
+    resource_item = models.OneToOneField('TimeResourceItems', on_delete=models.CASCADE, related_name='equipment', primary_key=True)
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     resource_model = models.ForeignKey('ResourceModel', on_delete=models.CASCADE)
@@ -234,10 +233,10 @@ class Equipment(models.Model):
 
     class Meta:
         db_table = 'equipment'
-        ordering = ['id']
+        ordering = ['resource_item']
 
 class ResourceType(models.Model):
-    code = models.CharField(max_length=5, unique=True)
+    code = models.CharField(max_length=5, primary_key=True)
     name = models.CharField(max_length=100)
     measure = models.CharField(max_length=100)
     unit_size = models.IntegerField()
@@ -248,7 +247,7 @@ class ResourceType(models.Model):
 
     class Meta:
         db_table = 'resource_types'
-        ordering = ['id']
+        ordering = ['code']
 
 
 class ResourceModel(models.Model):
@@ -269,11 +268,11 @@ class ResourceModel(models.Model):
 
 
 class Phase(models.Model):
-    code = models.CharField(max_length=5, unique=True)
+    code = models.CharField(max_length=5, unique=True, primary_key=True)
     name = models.CharField(max_length=100)
     sequence = models.IntegerField()
     duration = models.IntegerField()
-    modal_count = models.ForeignKey(ModalCount, on_delete=models.PROTECT, null=True, blank=True)
+    modal_count = models.ForeignKey('ModalCount', on_delete=models.PROTECT, null=True, blank=True)  # Assuming 'ModalCount' is a model you have defined elsewhere
     date_created = models.DateField(auto_now_add=True)
 
     def __str__(self):
@@ -281,15 +280,14 @@ class Phase(models.Model):
 
     class Meta:
         db_table = 'phases'
-        ordering = ['id']
-
+        ordering = ['code']  # Changed from 'id' to 'code'
 
 class PhaseResource(models.Model):
-    code = models.OneToOneField(Segment, on_delete=models.CASCADE, unique=True, related_name='phase_resource')
+    code = models.OneToOneField('Segment', on_delete=models.CASCADE, unique=True, primary_key=True, related_name='phase_resource')  # Assuming 'Segment' is a model you have defined elsewhere
     name = models.CharField(max_length=100)
     phase_code = models.ForeignKey(Phase, on_delete=models.PROTECT)
-    resource_models_code = models.ForeignKey(ResourceModel, on_delete=models.CASCADE)
-    resource_types_code = models.ForeignKey(ResourceType, on_delete=models.CASCADE)
+    resource_models_code = models.ForeignKey('ResourceModel', on_delete=models.CASCADE)  # Assuming 'ResourceModel' is a model you have defined elsewhere
+    resource_types_code = models.ForeignKey('ResourceType', on_delete=models.CASCADE)  # Assuming 'ResourceType' is a model you have defined elsewhere
     date_created = models.DateField(auto_now_add=True)
 
     def clean(self):
@@ -303,7 +301,7 @@ class PhaseResource(models.Model):
 
     class Meta:
         db_table = 'phase_resources'
-        ordering = ['id']
+        ordering = ['code']  # Changed from 'id' to 'code'
 
 
 class TimeResourcesQueue(models.Model):
