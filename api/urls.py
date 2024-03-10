@@ -14,6 +14,7 @@ from .views import (
     LogoutEmployeeView,
     UserTimeResourcesQueueList,
     UpdateTimeResource,
+    OrderAssignmentsList,
 )
 
 
@@ -30,4 +31,5 @@ urlpatterns = [
     path('logout/', LogoutEmployeeView.as_view(), name='logout_employee'),
     path('user-time-resources/', UserTimeResourcesQueueList.as_view(), name='user-time-resources'),
     path('user-time-resources/<int:time_resource_id>/', UpdateTimeResource.as_view(), name='update_time_resource'),
+    path('assignments/<str:order_number>/', OrderAssignmentsList.as_view(), name='order_assignments'),
 ]
