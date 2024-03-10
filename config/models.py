@@ -189,7 +189,7 @@ class Employee(models.Model):
     naf = models.CharField(max_length=15, unique=True)
     dob = models.DateField()
     tel = models.CharField(max_length=15, blank=True, null=True)
-    email = models.EmailField(blank=True, null=True)
+    email = models.EmailField()
     street = models.CharField(max_length=255, blank=True, null=True)
     town = models.CharField(max_length=100)
     postcode = models.CharField(max_length=10, blank=True, null=True)
