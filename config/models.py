@@ -484,3 +484,19 @@ class EmployeePhases(models.Model):
 
     def __str__(self):
         return self.employee_phase
+
+class AdminEmployeeParams(models.Model):
+    code = models.CharField(max_length=5, unique=True, primary_key=True)
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, blank=True, null=True)
+    value = models.CharField(max_length=255)  # Assuming value is a text, adjust if it's another type
+    date_created = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+    class Meta:
+        db_table = 'admin_employee_params'  # Ensures the table name is exact
+        ordering = ['code']  # Default ordering
+        verbose_name = 'Admin Employee Parameter'
+        verbose_name_plural = 'Admin Employee Parameters'

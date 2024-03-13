@@ -257,21 +257,12 @@ class OrderAssignmentsList(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, format=None):
-        # Extract order_number from query parameters
-        order_number = request.query_params.get('order_number', None)
-        
-        # Check if order_number was provided
-        if order_number is None:
-            return Response({'error': 'Order number is required'}, status=400)
-
+        order_number = request.query_params.get('order_number')
+        logging.debug(f"Received order number: {order_number}")
         try:
-            # Fetch all instances from TimeResourcesQueue model where order_number matches
-            order_assignments = TimeResourcesQueue.objects.filter(order_number__order_number=order_number)
-            # Check if any order_assignments exist
+            order_assignments = TimeResourcesQueue.objects.filter(order_number=order_number)
             if not order_assignments:
                 return Response({'error': 'No assignments found for this order number'}, status=404)
-            
-            # Serialize the queryset
             serializer = TimeResourcesQueueSerializer(order_assignments, many=True)
             return Response(serializer.data)
         except Exception as e:
