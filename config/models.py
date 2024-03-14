@@ -303,7 +303,6 @@ class PhaseResource(models.Model):
         db_table = 'phase_resources'
         ordering = ['code']  # Changed from 'id' to 'code'
 
-
 class TimeResourcesQueue(models.Model):
     resource_item_code = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE)
     segment = models.ForeignKey('Segment', on_delete=models.CASCADE, related_name='time_resources_queue')
@@ -313,11 +312,20 @@ class TimeResourcesQueue(models.Model):
     staff_start = models.DateTimeField(blank=True, null=True)
     staff_end = models.DateTimeField(blank=True, null=True)
     staff_timer = models.DurationField(blank=True, null=True)
+    staff_duration = models.DurationField(blank=True, null=True)
     date_created = models.DateField(auto_now_add=True)
     resource_model = models.ForeignKey('ResourceModel', on_delete=models.CASCADE)
     segment_params = models.ForeignKey('SegmentParam', on_delete=models.PROTECT)
-    order_number = models.ForeignKey(Orders, on_delete=models.PROTECT, null=True, blank=True, to_field='order_number')
+    order_number = models.ForeignKey('Orders', on_delete=models.PROTECT, null=True, blank=True, to_field='order_number')
 
+    def save(self, *args, **kwargs):
+        if self.staff_start and self.staff_end:  # Ensure both dates are provided
+            if self.staff_end < self.staff_start:
+                raise ValidationError("staff_end must be greater than staff_start")
+            self.staff_duration = self.staff_end - self.staff_start  # Calculate the duration
+        else:
+            self.staff_duration = None  # Reset to None if either date is missing
+        super().save(*args, **kwargs)  # Call the "real" save method.
 
     def __str__(self):
         return f"{self.resource_item_code} ({self.segment})"
@@ -325,6 +333,7 @@ class TimeResourcesQueue(models.Model):
     class Meta:
         db_table = 'time_resources_queue'
         ordering = ['id']
+
 
 
 class TimeResourcesQueueHistory(models.Model):
@@ -336,6 +345,8 @@ class TimeResourcesQueueHistory(models.Model):
     segment_end = models.DateTimeField()
     staff_start = models.DateTimeField(blank=True, null=True)
     staff_end = models.DateTimeField(blank=True, null=True)
+    staff_timer = models.DurationField(blank=True, null=True)
+    staff_duration = models.DurationField(blank=True, null=True)
     date_created = models.DateField()
     resource_model = models.ForeignKey(ResourceModel, on_delete=models.CASCADE)
     segment_params = models.ForeignKey('SegmentParam', on_delete=models.PROTECT, null=True, blank=True)
@@ -489,6 +500,8 @@ class AdminEmployeeParams(models.Model):
     code = models.CharField(max_length=5, unique=True, primary_key=True)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255, blank=True, null=True)
+    location_code = models.CharField(max_length=5)
+    team_code = models.CharField(max_length=5)
     value = models.CharField(max_length=255)  # Assuming value is a text, adjust if it's another type
     date_created = models.DateField(auto_now_add=True)
 
