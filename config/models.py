@@ -496,12 +496,89 @@ class EmployeePhases(models.Model):
     def __str__(self):
         return self.employee_phase
 
+class Franchise(models.Model):
+    code = models.CharField(max_length=10, unique=True, primary_key=True)
+    name = models.CharField(max_length=255)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    date_created = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'franchise'
+
+class Location(models.Model):
+    code = models.CharField(max_length=10, unique=True, primary_key=True)
+    name = models.CharField(max_length=255)
+    street = models.CharField(max_length=255)
+    town = models.CharField(max_length=100)
+    region = models.CharField(max_length=100)
+    postcode = models.CharField(max_length=10)
+    country = models.CharField(max_length=100)
+    telephone = models.CharField(max_length=15)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    date_created = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'location'
+
+class Role(models.Model):
+    resource_item_id = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE)
+    role = models.CharField(max_length=255)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    date_created = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return self.role
+
+    class Meta:
+        db_table = 'role'
+
+class Team(models.Model):
+    code = models.CharField(max_length=10, unique=True, primary_key=True)
+    name = models.CharField(max_length=255)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    date_created = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'team'
+
+class EmployeeCoordinates(models.Model):
+    resource_item_id = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE)
+    franchise = models.ForeignKey(Franchise, on_delete=models.CASCADE)
+    location = models.ForeignKey(Location, on_delete=models.CASCADE)
+    manager =  models.ForeignKey(Role, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    date_created = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.resource_item_id} - {self.location} - {self.franchise}"
+
+    class Meta:
+        db_table = 'employee_coordinates'
+        verbose_name_plural = 'Employee Coordinates'
+
 class AdminEmployeeParams(models.Model):
     code = models.CharField(max_length=5, unique=True, primary_key=True)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255, blank=True, null=True)
-    location_code = models.CharField(max_length=5)
-    team_code = models.CharField(max_length=5)
+    franchise = models.ForeignKey(Franchise, on_delete=models.CASCADE)
+    location = models.ForeignKey(Location, on_delete=models.CASCADE)
+    manager =  models.ForeignKey(Role, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
     value = models.CharField(max_length=255)  # Assuming value is a text, adjust if it's another type
     date_created = models.DateField(auto_now_add=True)
 
