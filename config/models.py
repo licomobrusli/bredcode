@@ -528,19 +528,6 @@ class Location(models.Model):
     class Meta:
         db_table = 'location'
 
-class Role(models.Model):
-    resource_item_id = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE)
-    role = models.CharField(max_length=255)
-    start_date = models.DateField()
-    end_date = models.DateField(null=True, blank=True)
-    date_created = models.DateField(auto_now_add=True)
-
-    def __str__(self):
-        return self.role
-
-    class Meta:
-        db_table = 'role'
-
 class Team(models.Model):
     code = models.CharField(max_length=10, unique=True, primary_key=True)
     name = models.CharField(max_length=255)
@@ -558,8 +545,9 @@ class EmployeeCoordinates(models.Model):
     resource_item_id = models.ForeignKey('TimeResourceItems', on_delete=models.CASCADE)
     franchise = models.ForeignKey(Franchise, on_delete=models.CASCADE)
     location = models.ForeignKey(Location, on_delete=models.CASCADE)
-    manager =  models.ForeignKey(Role, on_delete=models.CASCADE)
+    manager =  models.ForeignKey(Employee, on_delete=models.CASCADE)
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    role = models.ForeignKey(ResourceModel, on_delete=models.CASCADE)
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
     date_created = models.DateField(auto_now_add=True)
@@ -577,7 +565,7 @@ class AdminEmployeeParams(models.Model):
     description = models.CharField(max_length=255, blank=True, null=True)
     franchise = models.ForeignKey(Franchise, on_delete=models.CASCADE)
     location = models.ForeignKey(Location, on_delete=models.CASCADE)
-    manager =  models.ForeignKey(Role, on_delete=models.CASCADE)
+    manager =  models.ForeignKey(Employee, on_delete=models.CASCADE)
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     value = models.CharField(max_length=255)  # Assuming value is a text, adjust if it's another type
     date_created = models.DateField(auto_now_add=True)
